@@ -1,51 +1,29 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T01:41:24.503Z",
-  "summary": "REQ-21 and REQ-22 appear implemented in the shown frontend diffs (new brand/description fields and validations; updated mutation payload and alert texts). Backend types/migration scaffolding for REQ-20/REQ-24 are present, but the diff snippet is truncated before the actual `addToCart`/`getCallerOrders` implementations, so persistence/defaulting behavior and notification-record creation cannot be confirmed. REQ-23 (My Orders rendering of new fields) is not evidenced in the provided DashboardPage snippet due to truncation.",
-  "missing_requirements": [
-    {
-      "id": "REQ-20",
-      "requirement": "`addToCart` backend method accepts the new required inputs and persists them on the created order; new orders default `paymentStatus` to \"Pending\" and set snippet-default `price`/`deliveryTime` unless overridden.",
-      "reason": "The diff shows new backend types (`AddToCartInput`, `ExpandedOrder`) and a migration module, but the provided `backend/main.mo` content is truncated before the `addToCart` implementation. No evidence is shown that `addToCart` persists the new fields or applies the required defaults.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-23",
-      "requirement": "Update the Dashboard \"My Orders\" display to include (at minimum) product, brand name, and payment status, without breaking existing timestamp/status rendering.",
-      "reason": "The `DashboardPage.tsx` diff snippet includes form changes and submission payload, but the section that renders \"My Orders\" is not included in the shown truncated content. Therefore there is no direct evidence that order cards display product/brand/payment status.",
-      "evidence": [
-        "frontend/src/pages/DashboardPage.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-24",
-      "requirement": "Persist a notification-request record in the Motoko backend after successful Add-to-Cart, containing name, email, phone, product, sample, brand name, description (linked to the created order or equivalent). No real `/api/notify` call.",
-      "reason": "The diff adds a `NotificationRequest` type and `notificationRequests` map state, but the code shown is truncated before any `addToCart` logic. There is no evidence in the provided snippet that a notification request record is actually created/stored when Add-to-Cart succeeds.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-12T17:28:55.650Z",
+  "summary": "REQ-67 appears implemented: HomePage now smooth-scrolls to element id \"premium-services-old\" via scrollIntoView. REQ-66 (section id + exact h2 text) is indicated by the diff summary text, but the relevant section markup is not visible in the truncated HomePage.tsx excerpt. Two ancillary files were modified that were not requested by the BuildRequest.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Added an explicit Motoko migration module and actor migration wiring (`with migration = Migration.run`) including legacy->new state transformation with placeholder defaults (e.g., product/brandName \"Unknown\", description \"No description\").",
-      "reason": "The BuildRequest did not ask for data migration support or legacy-order transformation; it only required extending the order model/API and storing notification-request records going forward.",
+      "description": "Updated/maintained repository meta-summary file content unrelated to changing the Home page section id/scroll target.",
+      "reason": "BuildRequest only asks to update HomePage.tsx section id and smooth-scroll target; it does not request updating summary/metadata files.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Updated/maintained project state metadata (project_state.json) unrelated to the requested Home page id/scroll behavior change.",
+      "reason": "BuildRequest is frontend-only and specifically scoped to HomePage.tsx changes; project_state.json updates are not requested.",
+      "evidence": [
+        "project_state.json"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useAddToCart.ts",
-    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/HomePage.tsx",
     "project_state.json"
   ]
 }

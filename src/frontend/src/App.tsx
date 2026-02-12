@@ -8,6 +8,12 @@ import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
+import BusinessCardPage from './pages/BusinessCardPage';
+import LogoDesignPage from './pages/LogoDesignPage';
+import ProductBannerPage from './pages/ProductBannerPage';
+import PhotoFramePage from './pages/PhotoFramePage';
+import PaymentPage from './pages/PaymentPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import AuthGate from './components/AuthGate';
 
 const rootRoute = createRootRoute({
@@ -64,6 +70,50 @@ const dashboardRoute = createRoute({
   )
 });
 
+const businessCardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/business-card',
+  component: BusinessCardPage
+});
+
+const logoDesignRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/logo-design',
+  component: LogoDesignPage
+});
+
+const productBannerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/product-banner',
+  component: ProductBannerPage
+});
+
+const photoFrameRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/photo-frame',
+  component: PhotoFramePage
+});
+
+const paymentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/payment/$orderId',
+  component: () => (
+    <AuthGate>
+      <PaymentPage />
+    </AuthGate>
+  )
+});
+
+const paymentSuccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/payment-success/$orderId',
+  component: () => (
+    <AuthGate>
+      <PaymentSuccessPage />
+    </AuthGate>
+  )
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   servicesRoute,
@@ -71,7 +121,13 @@ const routeTree = rootRoute.addChildren([
   contactRoute,
   loginRoute,
   signUpRoute,
-  dashboardRoute
+  dashboardRoute,
+  businessCardRoute,
+  logoDesignRoute,
+  productBannerRoute,
+  photoFrameRoute,
+  paymentRoute,
+  paymentSuccessRoute
 ]);
 
 const router = createRouter({ routeTree });
@@ -83,4 +139,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-

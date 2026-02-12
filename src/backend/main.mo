@@ -11,10 +11,9 @@ import Order "mo:core/Order";
 import List "mo:core/List";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-// Add migration function
-(with migration = Migration.run)
+
+
 actor {
   // Types
   public type Service = {
@@ -273,6 +272,24 @@ actor {
     nextNotificationId += 1;
 
     id;
+  };
+
+  public shared ({ caller }) func updateOrderPaymentStatus(orderId : Nat, status : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update payment status");
+    };
+    switch (expandedOrders.get(orderId)) {
+      case (null) {
+        Runtime.trap("Order not found");
+      };
+      case (?order) {
+        if (order.owner != caller and not AccessControl.isAdmin(accessControlState, caller)) {
+          Runtime.trap("Unauthorized: Can only update payment status for your own orders");
+        };
+        let updatedOrder = { order with paymentStatus = status };
+        expandedOrders.add(orderId, updatedOrder);
+      };
+    };
   };
 
   public query ({ caller }) func getCallerOrders() : async [ExpandedOrder] {

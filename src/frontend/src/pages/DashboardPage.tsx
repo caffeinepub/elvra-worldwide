@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useServices } from '../hooks/useServices';
 import { useGetSupportRequests } from '../hooks/useSupport';
 import { useGetCallerUserProfile } from '../hooks/useUserProfile';
@@ -9,16 +9,29 @@ import { Package, MessageSquare, User, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Gender, OrderStatus } from '../backend';
+import { validateDescription, countWords } from '../utils/validation';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { data: services, isLoading: servicesLoading } = useServices();
   const { data: supportRequests } = useGetSupportRequests();
   const { data: userProfile } = useGetCallerUserProfile();
   const { data: orders } = useGetCallerOrders();
-  const addToCartMutation = useAddToCart();
+  
+  const addToCartMutation = useAddToCart({
+    onSuccess: (orderId) => {
+      // Reveal and scroll to checkout section
+      const checkoutSection = document.getElementById('checkoutSection');
+      if (checkoutSection) {
+        checkoutSection.style.display = 'block';
+        checkoutSection.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      navigate({ to: '/payment/$orderId', params: { orderId: orderId.toString() } });
+    }
+  });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +43,12 @@ export default function DashboardPage() {
     brandName: '',
     description: '',
   });
+
+  const [orderSelection, setOrderSelection] = useState<{
+    productName: string;
+    price: number;
+    delivery: string;
+  } | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -47,14 +66,35 @@ export default function DashboardPage() {
     }
   }, [userProfile]);
 
-  // Handle URL search params for prefilling sample name
+  // Handle URL search params for prefilling sample name and order selection
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sampleName = params.get('sample');
+    
+    // Check for order selection from sessionStorage
+    const storedSelection = sessionStorage.getItem('orderSelection');
+    if (storedSelection) {
+      try {
+        const selection = JSON.parse(storedSelection);
+        setOrderSelection(selection);
+        // Clear from sessionStorage after reading
+        sessionStorage.removeItem('orderSelection');
+        
+        // Scroll to order section after a brief delay to ensure DOM is ready
+        setTimeout(() => {
+          document.getElementById('orderSection')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } catch (e) {
+        console.error('Failed to parse order selection:', e);
+      }
+    }
+    
     if (sampleName) {
       setFormData((prev) => ({ ...prev, selectedSample: sampleName }));
-      // Scroll to form
-      document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
+      // Only scroll to form if no order selection (to avoid double scroll)
+      if (!storedSelection) {
+        document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }, []);
 
@@ -94,10 +134,10 @@ export default function DashboardPage() {
       return;
     }
 
-    // Validate description word count
-    const wordCount = formData.description.trim().split(/\s+/).filter(word => word.length > 0).length;
-    if (wordCount > 1000) {
-      alert('Description exceeds 1000 words limit');
+    // Validate description using shared validation
+    const descValidation = validateDescription(formData.description);
+    if (!descValidation.isValid) {
+      alert(descValidation.message);
       return;
     }
 
@@ -148,6 +188,8 @@ export default function DashboardPage() {
     return colorMap[status] || 'text-muted-foreground';
   };
 
+  const wordCount = countWords(formData.description);
+
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -157,6 +199,17 @@ export default function DashboardPage() {
             <p className="text-lg text-muted-foreground">Welcome back, {userProfile.fullName}</p>
           )}
         </div>
+
+        {/* Order Selection Summary Section */}
+        {orderSelection && (
+          <div id="orderSection" className="mb-12 scroll-mt-24">
+            <h2>Order This Product</h2>
+
+            <p><strong>Product:</strong> <span id="selectedProduct">{orderSelection.productName}</span></p>
+            <p><strong>Price:</strong> <span id="selectedPrice">${orderSelection.price}</span></p>
+            <p><strong>Delivery Time:</strong> <span id="selectedDelivery">{orderSelection.delivery}</span></p>
+          </div>
+        )}
 
         {/* Services Section */}
         <section className="mb-12">
@@ -258,7 +311,7 @@ export default function DashboardPage() {
                     value={formData.gender}
                     onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
                   >
-                    <SelectTrigger className={errors.gender ? 'border-destructive' : ''}>
+                    <SelectTrigger id="gender" className={errors.gender ? 'border-destructive' : ''}>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,52 +333,55 @@ export default function DashboardPage() {
                     value={formData.selectedSample}
                     onChange={(e) => setFormData({ ...formData, selectedSample: e.target.value })}
                     className={errors.selectedSample ? 'border-destructive' : ''}
-                    placeholder="e.g., Business Card Design"
                   />
                   {errors.selectedSample && (
                     <p className="text-sm text-destructive mt-1">{errors.selectedSample}</p>
                   )}
                 </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="brandName">
-                    Shop / Brand Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="brandName"
-                    type="text"
-                    value={formData.brandName}
-                    onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                    placeholder="Enter your shop or brand name"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="description">
-                    Description <span className="text-muted-foreground">(max 1000 words)</span>
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe your requirements..."
-                    rows={5}
-                    className="resize-none"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formData.description.trim().split(/\s+/).filter(word => word.length > 0).length} / 1000 words
-                  </p>
-                </div>
               </div>
 
-              <Button
-                type="submit"
-                disabled={addToCartMutation.isPending}
-                className="w-full md:w-auto"
-              >
-                {addToCartMutation.isPending ? 'Adding to Cart...' : 'Add to Cart'}
+              <div>
+                <Label htmlFor="brandName">
+                  Shop / Brand Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="brandName"
+                  type="text"
+                  placeholder="Enter your Shop / Brand Name"
+                  value={formData.brandName}
+                  onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Detailed Description</Label>
+                <textarea
+                  id="description"
+                  placeholder="Describe your requirement (up to 1000 words)"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={6}
+                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                />
+                <p id="wordCount" className="text-sm text-muted-foreground mt-1">
+                  {wordCount} / 1000
+                </p>
+              </div>
+
+              <Button type="submit" disabled={addToCartMutation.isPending} className="w-full md:w-auto">
+                {addToCartMutation.isPending ? 'Adding to Cart...' : 'Add to Cart & Proceed'}
               </Button>
             </form>
+          </div>
+        </section>
+
+        {/* Checkout Section (hidden by default, revealed after successful add-to-cart) */}
+        <section id="checkoutSection" style={{ display: 'none' }} className="mb-12 scroll-mt-24">
+          <div className="bg-card border border-border rounded-lg p-8">
+            <h2 className="text-2xl font-serif font-bold mb-4">Checkout</h2>
+            <p className="text-muted-foreground">
+              Your order has been added to cart. Proceeding to payment...
+            </p>
           </div>
         </section>
 
@@ -336,124 +392,134 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-serif font-bold">My Orders</h2>
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-8">
-            {orders && orders.length > 0 ? (
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <div
-                    key={order.id.toString()}
-                    className="p-4 bg-accent/20 rounded border border-border"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-semibold">{order.product}</p>
-                        <p className="text-sm text-muted-foreground">Order #{order.id.toString()}</p>
-                      </div>
-                      <span className={`text-sm font-medium ${getOrderStatusColor(order.orderStatus)}`}>
-                        {getOrderStatusLabel(order.orderStatus)}
-                      </span>
+          {orders && orders.length > 0 ? (
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <div key={order.id.toString()} className="bg-card border border-border rounded-lg p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Order ID</p>
+                      <p className="font-medium">#{order.id.toString()}</p>
                     </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p><span className="font-medium">Brand:</span> {order.brandName}</p>
-                      <p><span className="font-medium">Payment Status:</span> {order.paymentStatus}</p>
-                      <p><span className="font-medium">Name:</span> {order.name}</p>
-                      <p><span className="font-medium">Email:</span> {order.email}</p>
-                      {order.phone && <p><span className="font-medium">Phone:</span> {order.phone}</p>}
-                      <p className="mt-2">
-                        <span className="font-medium">Ordered:</span> {new Date(Number(order.timestamp) / 1000000).toLocaleDateString()}
+                    <div>
+                      <p className="text-sm text-muted-foreground">Product</p>
+                      <p className="font-medium">{order.product}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Brand Name</p>
+                      <p className="font-medium">{order.brandName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Sample Selected</p>
+                      <p className="font-medium">{order.sampleSelected}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Order Status</p>
+                      <p className={`font-medium ${getOrderStatusColor(order.orderStatus)}`}>
+                        {getOrderStatusLabel(order.orderStatus)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Payment Status</p>
+                      <p className="font-medium">{order.paymentStatus}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No orders yet</p>
+            </div>
+          )}
+        </section>
+
+        {/* Support Requests Section */}
+        <section className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <MessageSquare className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-serif font-bold">My Support Requests</h2>
+          </div>
+
+          {supportRequests && supportRequests.length > 0 ? (
+            <div className="space-y-4">
+              {supportRequests.map((request, index) => (
+                <div key={index} className="bg-card border border-border rounded-lg p-6">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Name</p>
+                      <p className="font-medium">{request.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{request.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Message</p>
+                      <p className="font-medium">{request.message}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Submitted</p>
+                      <p className="font-medium">
+                        {new Date(Number(request.timestamp) / 1000000).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center">No orders yet. Place your first order above!</p>
-            )}
-          </div>
-        </section>
-
-        {/* Support Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">Support</h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card border border-border rounded-lg p-8">
-              <h3 className="text-xl font-semibold mb-4">Need Help?</h3>
-              <p className="text-muted-foreground mb-6">
-                Our support team is here to assist you with any questions or concerns.
-              </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded font-medium hover:bg-primary/90 transition-colors"
-              >
-                Contact Support
-              </Link>
-            </div>
-
-            <div className="bg-card border border-border rounded-lg p-8">
-              <h3 className="text-xl font-semibold mb-4">Your Support Requests</h3>
-              {supportRequests && supportRequests.length > 0 ? (
-                <div className="space-y-3">
-                  {supportRequests.slice(0, 3).map((request, index) => (
-                    <div key={index} className="p-3 bg-accent/20 rounded border border-border">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {new Date(Number(request.timestamp) / 1000000).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm line-clamp-2">{request.message}</p>
-                    </div>
-                  ))}
-                  {supportRequests.length > 3 && (
-                    <Link to="/contact" className="text-sm text-primary hover:underline">
-                      View all requests
-                    </Link>
-                  )}
                 </div>
-              ) : (
-                <p className="text-muted-foreground">No support requests yet.</p>
-              )}
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No support requests yet</p>
+            </div>
+          )}
         </section>
 
-        {/* Profile Section */}
-        {userProfile && (
-          <section className="mt-12">
-            <div className="flex items-center gap-3 mb-6">
-              <User className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-serif font-bold">Profile Information</h2>
-            </div>
+        {/* User Profile Section */}
+        <section className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <User className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-serif font-bold">My Profile</h2>
+          </div>
 
-            <div className="bg-card border border-border rounded-lg p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {userProfile ? (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Full Name</p>
+                  <p className="text-sm text-muted-foreground">Full Name</p>
                   <p className="font-medium">{userProfile.fullName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Email</p>
+                  <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium">{userProfile.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Mobile Number</p>
+                  <p className="text-sm text-muted-foreground">Mobile Number</p>
                   <p className="font-medium">{userProfile.mobileNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Verification Status</p>
-                  <p className="font-medium">
-                    {userProfile.isVerified ? (
-                      <span className="text-primary">✓ Verified</span>
-                    ) : (
-                      <span className="text-muted-foreground">Not Verified</span>
-                    )}
-                  </p>
+                  <p className="text-sm text-muted-foreground">Date of Birth</p>
+                  <p className="font-medium">{userProfile.dob}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Gender</p>
+                  <p className="font-medium capitalize">{userProfile.gender}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Verification Status</p>
+                  <p className="font-medium">{userProfile.isVerified ? 'Verified' : 'Not Verified'}</p>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
+              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No profile information available</p>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

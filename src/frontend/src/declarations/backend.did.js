@@ -130,6 +130,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'submitSupportRequest' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+  'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
 });
 
@@ -258,6 +259,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'submitSupportRequest' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+    'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
   });
 };

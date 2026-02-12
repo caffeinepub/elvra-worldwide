@@ -1,0 +1,55 @@
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
+import ProductAddToCartSection from '../components/ProductAddToCartSection';
+
+export default function LogoDesignPage() {
+  return (
+    <div className="min-h-screen py-16 md:py-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <Link
+          to="/"
+          className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-8"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Link>
+        
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-12">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Logo Design</h1>
+            <p className="text-lg text-muted-foreground">
+              Distinctive logo designs that capture your brand's essence.
+            </p>
+          </div>
+
+          <div className="rounded-lg overflow-hidden border border-border shadow-luxury mb-12">
+            <img 
+              src="/assets/generated/banner2.dim_1600x900.jpg" 
+              alt="Logo Design"
+              className="w-full h-auto"
+            />
+          </div>
+
+          <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-8">
+            <h2 className="text-2xl font-serif font-bold mb-4">About This Product</h2>
+            <p className="text-muted-foreground mb-6">
+              Create a powerful visual identity with our custom logo design services. We craft unique, 
+              memorable logos that embody your brand's values and resonate with your target audience. 
+              From concept to final delivery, we ensure every detail aligns with your vision.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/contact"
+                className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+              >
+                Contact Us
+              </Link>
+            </div>
+          </div>
+
+          <ProductAddToCartSection productName="Logo Design" />
+        </div>
+      </div>
+    </div>
+  );
+}

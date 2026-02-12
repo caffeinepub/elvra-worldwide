@@ -1,31 +1,74 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useAuthState } from '../hooks/useAuthState';
 import ServiceCard from '../components/ServiceCard';
 import { ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuthState();
+  const navigate = useNavigate();
+
+  const openOrder = (productName: string, price: number, delivery: string) => {
+    if (isAuthenticated) {
+      // Store order details in sessionStorage for Dashboard to read
+      sessionStorage.setItem('orderSelection', JSON.stringify({
+        productName,
+        price,
+        delivery
+      }));
+      
+      navigate({ 
+        to: '/dashboard',
+        search: { sample: productName }
+      });
+    } else {
+      navigate({ to: '/login' });
+    }
+  };
 
   const services = [
     {
       name: 'Business Card Design',
-      priceRange: '$30–$50',
-      deliveryTime: 'Delivery 3 Days',
-      icon: '/assets/generated/business-card-icon.dim_256x256.png'
+      priceRange: '$30 – $50',
+      deliveryTime: 'Delivery: 3 Business Days',
+      icon: '/assets/generated/business-card-icon.dim_256x256.png',
+      price: 30
     },
     {
       name: 'Logo Design',
       priceRange: '$40–$80',
       deliveryTime: 'Delivery 3 Days',
-      icon: '/assets/generated/logo-design-icon.dim_256x256.png'
+      icon: '/assets/generated/logo-design-icon.dim_256x256.png',
+      price: 40
     },
     {
       name: 'Photo Frame Design',
       priceRange: '$10–$15',
       deliveryTime: 'Delivery 3 Days',
-      icon: '/assets/generated/photo-frame-icon.dim_256x256.png'
+      icon: '/assets/generated/photo-frame-icon.dim_256x256.png',
+      price: 10
+    },
+    {
+      name: 'Product Banner Design',
+      priceRange: '$25–$60',
+      deliveryTime: 'Delivery: 3 Business Days',
+      icon: '/product-banner.jpg',
+      price: 25
     }
   ];
+
+  const products = [
+    { name: 'Business Card', page: '/business-card', banner: '/assets/generated/banner1.dim_1600x900.jpg' },
+    { name: 'Logo Design', page: '/logo-design', banner: '/assets/generated/banner2.dim_1600x900.jpg' },
+    { name: 'Product Banner', page: '/product-banner', banner: '/assets/generated/banner3.dim_1600x900.jpg' },
+    { name: 'Photo Frame', page: '/photo-frame', banner: '/assets/generated/banner4.dim_1600x900.jpg' },
+  ];
+
+  const scrollToServices = () => {
+    const section = document.getElementById('premium-services-old');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -55,19 +98,19 @@ export default function HomePage() {
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <Link
-                to="/services"
+              <button
+                onClick={scrollToServices}
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
               >
                 Order Now
-              </Link>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="py-16 md:py-24 bg-card/50">
+      <section id="premium-services-old" className="py-16 md:py-24 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Premium Services</h2>
@@ -75,7 +118,7 @@ export default function HomePage() {
               Professional design solutions tailored to elevate your brand presence globally.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {services.map((service) => (
               <ServiceCard
                 key={service.name}
@@ -83,7 +126,49 @@ export default function HomePage() {
                 name={service.name}
                 priceRange={service.priceRange}
                 deliveryTime={service.deliveryTime}
+                action={
+                  <button
+                    onClick={() => openOrder(service.name, service.price, service.deliveryTime)}
+                    className="order-btn w-full"
+                  >
+                    Order Now
+                  </button>
+                }
               />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Product Grid Section */}
+      <section id="products" className="py-16 md:py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Premium Services</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Discover our range of premium design products crafted with excellence.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {products.map((product) => (
+              <div
+                key={product.name}
+                onClick={() => navigate({ to: product.page })}
+                className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card hover:shadow-luxury transition-all duration-300 hover:scale-105"
+              >
+                <div className="aspect-video overflow-hidden">
+                  <img 
+                    src={product.banner} 
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-center group-hover:text-primary transition-colors">
+                    {product.name}
+                  </h3>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -112,4 +197,3 @@ export default function HomePage() {
     </div>
   );
 }
-

@@ -109,6 +109,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'submitSupportRequest' : ActorMethod<[string, string, string], undefined>,
+  'updateOrderPaymentStatus' : ActorMethod<[bigint, string], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

@@ -111,5 +111,6 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitSupportRequest(name: string, email: string, message: string): Promise<void>;
+    updateOrderPaymentStatus(orderId: bigint, status: string): Promise<void>;
     updateOrderStatus(orderId: bigint, status: OrderStatus): Promise<void>;
 }

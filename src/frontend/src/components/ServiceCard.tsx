@@ -10,29 +10,19 @@ interface ServiceCardProps {
 
 export default function ServiceCard({ icon, name, priceRange, deliveryTime, action }: ServiceCardProps) {
   return (
-    <div className="group relative bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-luxury">
+    <div className="service-card">
       {icon && (
-        <div className="mb-4 flex justify-center">
-          <img 
-            src={icon} 
-            alt={name} 
-            className="h-16 w-16 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
-          />
-        </div>
+        <img 
+          src={icon} 
+          alt={name}
+        />
       )}
-      <h3 className="text-xl font-serif font-bold mb-3 text-center">{name}</h3>
-      <div className="space-y-2 mb-4">
-        <p className="text-sm text-muted-foreground text-center">
-          <span className="font-semibold text-primary">{priceRange}</span>
-        </p>
-        <p className="text-sm text-muted-foreground text-center">{deliveryTime}</p>
-      </div>
-      {action && (
-        <div className="mt-4">
-          {action}
-        </div>
-      )}
+      <h3>{name}</h3>
+      <p className="price">
+        {priceRange}
+      </p>
+      <p className="delivery">{deliveryTime}</p>
+      {action}
     </div>
   );
 }
-

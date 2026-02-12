@@ -48,7 +48,7 @@ export default function ServicesPage() {
                 action={
                   <button
                     onClick={() => handleOrderNow(service.name)}
-                    className="w-full px-4 py-2 text-sm font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    className="order-btn w-full"
                   >
                     Order Now
                   </button>
@@ -61,3 +61,4 @@ export default function ServicesPage() {
     </div>
   );
 }
+

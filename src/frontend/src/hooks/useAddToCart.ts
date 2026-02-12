@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { AddToCartInput } from '../backend';
 
-export function useAddToCart() {
+interface UseAddToCartOptions {
+  onSuccess?: (orderId: bigint) => void;
+}
+
+export function useAddToCart(options?: UseAddToCartOptions) {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
@@ -11,13 +15,14 @@ export function useAddToCart() {
       if (!actor) throw new Error('Actor not available');
       return actor.addToCart(input);
     },
-    onSuccess: () => {
+    onSuccess: (orderId) => {
       queryClient.invalidateQueries({ queryKey: ['callerOrders'] });
-      alert('Sample added to cart! Please proceed to payment.');
+      if (options?.onSuccess) {
+        options.onSuccess(orderId);
+      }
     },
     onError: (error) => {
       console.error('Error adding to cart:', error);
-      alert('Something went wrong!');
     },
   });
 }
