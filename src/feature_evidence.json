@@ -1,0 +1,81 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-update-the-frontend-add-to-cart-form-in-frontend-src-pages-dashboardpage-tsx-to-collect-shop-brand-name-required-and-description-with-a-1000-word-limit-in-addition-to-the-existing-customer-fields-and-sample-name-and-submit-these-new-fields-through-the-add-to-cart-mutation",
+      "featureTitle": "Update the frontend Add-to-Cart form in `frontend/src/pages/DashboardPage.tsx` to collect `Shop / Brand Name` (required) and `Description` (with a 1000-word limit), in addition to the existing customer fields and sample name, and submit these new fields through the Add-to-Cart mutation.",
+      "files": [
+        "frontend/src/pages/DashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-21"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-frontend-src-hooks-useaddtocart-ts-to-pass-the-expanded-payload-to-the-backend-add-to-cart-api-and-update-the-success-alert-text-to-match-the-provided-snippet-sample-added-to-cart-please-proceed-to-payment-keep-the-error-alert-text-exactly-as-something-went-wrong",
+      "featureTitle": "Update `frontend/src/hooks/useAddToCart.ts` to pass the expanded payload to the backend Add-to-Cart API, and update the success alert text to match the provided snippet: \"Sample added to cart! Please proceed to payment.\" Keep the error alert text exactly as \"Something went wrong!\".",
+      "files": [
+        "frontend/src/hooks/useAddToCart.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-22"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-my-orders-display-on-the-dashboard-to-include-the-new-order-fields-returned-by-getcallerorders-at-minimum-product-brand-name-and-payment-status-without-breaking-existing-rendering-of-timestamp-and-status",
+      "featureTitle": "Update the \"My Orders\" display on the Dashboard to include the new order fields returned by `getCallerOrders` (at minimum: product, brand name, and payment status) without breaking existing rendering of timestamp and status.",
+      "files": [
+        "frontend/src/pages/DashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-23"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-a-best-effort-notification-trigger-step-after-a-successful-add-to-cart-action-that-mirrors-the-provided-intent-to-call-api-notify-but-without-introducing-supabase-or-a-non-ic-backend-store-a-notification-request-record-in-the-motoko-backend-that-includes-name-email-phone-product-sample-brand-name-and-description-so-an-admin-can-review-it-later",
+      "featureTitle": "Implement a best-effort \"notification trigger\" step after a successful Add-to-Cart action that mirrors the provided intent to call `/api/notify`, but without introducing Supabase or a non-IC backend: store a notification request record in the Motoko backend that includes name, email, phone, product, sample, brand name, and description so an admin can review it later.",
+      "files": [
+        "frontend/src/hooks/useAddToCart.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-24"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Expand Add-to-Cart payload + Dashboard form/orders UI to include brand/description/product/payment fields",
+  "requirements": [
+    {
+      "id": "REQ-21",
+      "summary": "Extend Dashboard Add-to-Cart form to collect required Shop / Brand Name and Description (1000-word limit) and submit them.",
+      "acceptanceCriteria": [
+        "Dashboard Add-to-Cart form includes inputs for \"Shop / Brand Name\" and \"Description\".",
+        "Submitting without a brand name triggers the exact alert text: \"Please enter your Shop / Brand Name\" and does not call the mutation.",
+        "Submitting with a description exceeding 1000 words triggers the exact alert text: \"Description exceeds 1000 words limit\" and does not call the mutation.",
+        "On valid input, the form calls the Add-to-Cart mutation including the new brand name and description values."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "operation": "modify",
+          "description": "Add \"Shop / Brand Name\" (required) and \"Description\" fields to the Add-to-Cart form state/UI; implement submit-time guards that show the exact required alert messages and prevent calling the mutation when invalid; pass brandName/description along with existing customer fields and sample name into the add-to-cart mutation payload. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "summary": "Update useAddToCart hook to send expanded payload and adjust success/error alerts to required strings.",
+      "acceptanceCriteria": [
+        "`useAddToCart` mutation sends all required fields needed by the updated backend Add-to-Cart method.",
+        "On mutation success, the app shows the exact alert: \"Sample added to cart! Please proceed to payment.\"",
+        "On mutation error, the app shows the exact alert: \"Something went wrong!\""
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAddToCart.ts",
+          "operation": "modify",
+          "description": "Update the mutation to call the backend add-to-cart capability using the expanded input object (including product, sampleSelected, brandName, description, and required default fields like price/deliveryTime if the frontend must provide them); update the success alert text to exactly \"Sample added to cart! Please proceed to payment.\" and keep the error alert exactly \"Something went wrong!\". Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "summary": "Enhance Dashboard \"My Orders\" cards to display product, brand name, and payment status while preserving timestamp and status rendering.",
+      "acceptanceCriteria": [
+        "After placing an order, refreshing or revisiting the Dashboard shows the created order in \"My Orders\".",
+        "Each order card displays product, brand name, and payment status (in English), in addition to existing order metadata already shown."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "operation": "modify",
+          "description": "Update \"My Orders\" rendering to use the expanded order fields returned by getCallerOrders (at minimum product, brandName, paymentStatus) and show them on each order card without breaking existing timestamp and orderStatus display. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "summary": "Ensure Add-to-Cart success flow relies on IC backend persistence for notification-request recording and does not attempt any /api/notify call.",
+      "acceptanceCriteria": [
+        "Backend persists a notification-request record linked to the created order (or containing equivalent fields) whenever Add-to-Cart succeeds.",
+        "No attempt is made to call a real `/api/notify` HTTP endpoint from the frontend or backend.",
+        "User-facing behavior remains: success and error alerts as specified, with no additional required user steps."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAddToCart.ts",
+          "operation": "modify",
+          "description": "Confirm/adjust the Add-to-Cart success flow so it performs only the backend add-to-cart call (no fetch/XHR to `/api/notify` or any external notification URL), relying on the backend to record the notification-request data after a successful add-to-cart; keep the user-facing alerts unchanged per requirements. Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 11,
+  "summary": "Premium, modern, international design agency website “Elvra Worldwide” with a luxury black-and-gold theme, including marketing pages, authentication, user dashboard, and payment provider mentions.",
+  "architectural_notes": [
+    "Project name: Elvra Worldwide.",
+    "UI theme: premium, luxury, clean; black and gold color palette; international/professional design.",
+    "Site structure includes public marketing pages plus auth and a user dashboard.",
+    "Payments: include a section that references Stripe and PayPal (provider mentions).",
+    "Contact page UX: use direct contact actions (mailto + WhatsApp deep link) with Framer Motion hover animations in a black-and-gold premium card layout.",
+    "Live chat: integrate Tidio by including the provided async script tag site-wide (e.g., in the main HTML/template).",
+    "Potential backend shift/addition: use Supabase via @supabase/supabase-js (createClient with SUPABASE_URL + ANON_KEY) for data persistence.",
+    "Supabase schema implied: `customers` table fields include name, email, phone, dob, gender, selected_sample, order_status (default flow sets 'Pending').",
+    "Supabase addToCart implementation targets an `orders` table (not `customers`) and inserts: customer_id, product, sample_selected, brand_name, description, price ('Depends on requirement'), delivery_time ('3 Days'), payment_status ('Pending').",
+    "Frontend addToCart validation: brand_name is required; description length must be <= 1000 words (per current user logic)."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-create-a-cohesive-premium-visual-theme-for-elvra-worldwide-using-a-luxury-black-and-gold-palette-with-a-clean-modern-layout-consistent-typography-spacing-and-component-styling-across-all-pages",
+      "title": "Create a cohesive, premium visual theme for “Elvra Worldwide” using a luxury black-and-gold palette with a clean modern layout, consistent typography, spacing, and component styling across all pages.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-site-navigation-and-routing-for-pages-home-services-pricing-contact-login-sign-up-and-user-dashboard-including-a-persistent-header-navigation-and-footer",
+      "title": "Implement site navigation and routing for pages: Home, Services, Pricing, Contact, Login, Sign Up, and User Dashboard, including a persistent header navigation and footer.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-home-page-with-the-exact-headline-designing-brands-worldwide-three-service-cards-and-call-to-action-buttons-labeled-get-started-and-order-now",
+      "title": "Build the Home page with the exact headline “Designing Brands Worldwide”, three service cards, and call-to-action buttons labeled “Get Started” and “Order Now”.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-services-page-that-lists-the-same-three-services-business-card-design-logo-design-photo-frame-design-with-their-price-ranges-and-delivery-time-and-provides-an-order-now-action-per-service",
+      "title": "Create a Services page that lists the same three services (Business Card Design, Logo Design, Photo Frame Design) with their price ranges and delivery time, and provides an “Order Now” action per service.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-pricing-page-that-presents-the-three-services-with-their-price-ranges-and-delivery-time-in-a-clear-premium-layout-and-includes-a-payment-section-that-mentions-stripe-and-paypal",
+      "title": "Create a Pricing page that presents the three services with their price ranges and delivery time in a clear premium layout, and includes a payment section that mentions Stripe and PayPal.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-contact-page-with-a-contact-form-name-email-message-and-a-contact-support-submission-flow-that-stores-support-requests-for-the-logged-in-user-in-the-backend-if-not-logged-in-allow-submitting-as-anonymous-with-only-the-form-data",
+      "title": "Create a Contact page with a contact form (name, email, message) and a “Contact Support” submission flow that stores support requests for the logged-in user in the backend; if not logged in, allow submitting as anonymous with only the form data.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-authentication-ux-using-internet-identity-for-login-logout-and-provide-dedicated-login-and-sign-up-pages-that-guide-users-into-signing-in-after-authentication-users-can-access-the-user-dashboard",
+      "title": "Implement authentication UX using Internet Identity for login/logout, and provide dedicated Login and Sign Up pages that guide users into signing in; after authentication, users can access the User Dashboard.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-sign-up-page-ui-with-fields-full-name-email-mobile-number-with-country-code-otp-verification-date-of-birth-gender-implement-otp-verification-as-an-in-app-demo-flow-generate-an-otp-code-and-validate-user-input-without-external-sms-email-providers",
+      "title": "Build the Sign Up page UI with fields: Full Name, Email, Mobile Number (with country code), OTP verification, Date of Birth, Gender. Implement OTP verification as an in-app demo flow (generate an OTP code and validate user input) without external SMS/email providers.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-user-dashboard-that-shows-1-services-catalog-2-the-user-s-orders-list-and-3-contact-support-entry-point-plus-a-list-of-the-user-s-submitted-support-requests",
+      "title": "Create a User Dashboard that shows: (1) services catalog, (2) the user’s orders list, and (3) contact support entry point plus a list of the user’s submitted support requests.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-required-brand-imagery-as-static-assets-and-incorporate-them-into-the-ui-e-g-header-logo-and-home-hero-served-from-the-frontend-public-assets-without-routing-images-through-the-backend",
+      "title": "Add required brand imagery as static assets and incorporate them into the UI (e.g., header logo and Home hero), served from the frontend public assets without routing images through the backend.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-existing-contact-page-frontend-src-pages-contactpage-tsx-to-match-the-provided-elvracontact-design-a-centered-premium-black-container-with-a-gold-title-contact-elvra-worldwide-a-short-subtitle-and-two-large-contact-action-cards-linking-to-email-and-whatsapp",
+      "title": "Update the existing Contact page (frontend/src/pages/ContactPage.tsx) to match the provided ElvraContact design: a centered, premium black container with a gold title \"Contact Elvra Worldwide\", a short subtitle, and two large contact action cards linking to email and WhatsApp.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-framer-motion-hover-animations-on-the-two-contact-action-cards-using-motion-a-with-whilehover-scale-of-1-03-as-shown-in-the-provided-code-snippet-and-ensure-the-dependency-is-available-in-the-frontend-build",
+      "title": "Add Framer Motion hover animations on the two contact action cards using motion.a with whileHover scale of 1.03, as shown in the provided code snippet, and ensure the dependency is available in the frontend build.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-existing-contact-page-support-request-form-ui-and-the-previous-requests-ui-from-frontend-src-pages-contactpage-tsx-so-the-contact-page-is-purely-direct-contact-email-whatsapp-and-does-not-submit-support-requests",
+      "title": "Remove the existing Contact page support-request form UI and the \"previous requests\" UI from frontend/src/pages/ContactPage.tsx so the Contact page is purely direct-contact (email/WhatsApp) and does not submit support requests.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-provided-tidio-live-chat-widget-embed-script-to-the-frontend-html-entry-file-so-it-loads-on-every-page-of-the-site",
+      "title": "Add the provided Tidio live chat widget embed script to the frontend HTML entry file so it loads on every page of the site.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-react-query-mutation-hook-to-call-the-new-backend-add-to-cart-api-and-mirror-the-user-facing-behavior-from-the-provided-code-on-error-show-something-went-wrong-and-on-success-show-sample-added-to-cart-you-will-be-notified-shortly-english-text-exactly",
+      "title": "Create a React Query mutation hook to call the new backend “Add to Cart” API and mirror the user-facing behavior from the provided code: on error show \"Something went wrong!\" and on success show \"Sample added to cart! You will be notified shortly.\" (English text exactly).",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-minimal-ui-entry-point-for-add-to-cart-that-collects-customer-data-name-email-phone-dob-gender-and-a-sample-name-and-then-calls-the-add-to-cart-mutation",
+      "title": "Add a minimal UI entry point for “Add to Cart” that collects customer data (name, email, phone, dob, gender) and a sample name, and then calls the add-to-cart mutation.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-add-to-cart-form-in-frontend-src-pages-dashboardpage-tsx-to-collect-shop-brand-name-required-and-description-with-a-1000-word-limit-in-addition-to-the-existing-customer-fields-and-sample-name-and-submit-these-new-fields-through-the-add-to-cart-mutation",
+      "title": "Update the frontend Add-to-Cart form in `frontend/src/pages/DashboardPage.tsx` to collect `Shop / Brand Name` (required) and `Description` (with a 1000-word limit), in addition to the existing customer fields and sample name, and submit these new fields through the Add-to-Cart mutation.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-hooks-useaddtocart-ts-to-pass-the-expanded-payload-to-the-backend-add-to-cart-api-and-update-the-success-alert-text-to-match-the-provided-snippet-sample-added-to-cart-please-proceed-to-payment-keep-the-error-alert-text-exactly-as-something-went-wrong",
+      "title": "Update `frontend/src/hooks/useAddToCart.ts` to pass the expanded payload to the backend Add-to-Cart API, and update the success alert text to match the provided snippet: \"Sample added to cart! Please proceed to payment.\" Keep the error alert text exactly as \"Something went wrong!\".",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-my-orders-display-on-the-dashboard-to-include-the-new-order-fields-returned-by-getcallerorders-at-minimum-product-brand-name-and-payment-status-without-breaking-existing-rendering-of-timestamp-and-status",
+      "title": "Update the \"My Orders\" display on the Dashboard to include the new order fields returned by `getCallerOrders` (at minimum: product, brand name, and payment status) without breaking existing rendering of timestamp and status.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-best-effort-notification-trigger-step-after-a-successful-add-to-cart-action-that-mirrors-the-provided-intent-to-call-api-notify-but-without-introducing-supabase-or-a-non-ic-backend-store-a-notification-request-record-in-the-motoko-backend-that-includes-name-email-phone-product-sample-brand-name-and-description-so-an-admin-can-review-it-later",
+      "title": "Implement a best-effort \"notification trigger\" step after a successful Add-to-Cart action that mirrors the provided intent to call `/api/notify`, but without introducing Supabase or a non-IC backend: store a notification request record in the Motoko backend that includes name, email, phone, product, sample, brand name, and description so an admin can review it later.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Create core website pages: Home, Services, Pricing, Contact",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement authentication pages: Login and Sign Up",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Build Home page content: headline, service cards (with prices/delivery), and CTA buttons (Get Started, Order Now)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Build Sign Up form fields including mobile w/ country code and OTP verification, plus DOB and gender",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Create User Dashboard showing services, orders, and contact support",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Add payment section mentioning Stripe and PayPal",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Apply premium luxury UI styling with black and gold color theme and clean modern layout",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Implement backend data models and APIs in the single Motoko actor to support: service catalog (static or stored), user profiles from sign-up, user orders, and support requests, with data scoped per authenticated principal where applicable.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Update Contact page to use a premium black-and-gold layout with Framer Motion hover effects and direct contact actions (mailto email + WhatsApp link) instead of a traditional contact form",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Add Tidio live chat widget by embedding the provided tidio.co script in the site",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Integrate Supabase (supabase-js) as a backend service and implement an “Add to Cart” / customer order insertion flow that writes customer details and selected sample into a `customers` table with an initial `order_status` of 'Pending'",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Implement a backend “Add to Cart” API that stores a customer order record with the fields from the provided Supabase example: name, email, phone, dob, gender, selected_sample (sampleName), and order_status initialized to \"Pending\".",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Add backend query APIs to support reading stored customer order records so the frontend can confirm insertion and (optionally) display the caller’s saved orders.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Update Supabase “Add to Cart” flow to insert into an `orders` table with fields: customer_id, product, sample_selected, brand_name, description, price, delivery_time, payment_status (default Pending)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Add post-add-to-cart notification trigger by calling a `/api/notify` endpoint (email/WhatsApp) with order/customer details after successful order insert",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Update the backend order model and Add-to-Cart API to support the additional fields from the provided Supabase `orders` insert example: `product`, `sample_selected`, `brand_name`, `description`, `price`, `delivery_time`, and `payment_status` (defaulting to \"Pending\"), while keeping orders scoped to the authenticated caller (principal).",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Elvra Worldwide",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

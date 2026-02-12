@@ -1,0 +1,140 @@
+{
+  "kind": "build_request",
+  "title": "Extend Add-to-Cart order data to include brand name, description, product, and payment fields (Supabase snippet parity)",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-20",
+      "text": "Update the backend order model and Add-to-Cart API to support the additional fields from the provided Supabase `orders` insert example: `product`, `sample_selected`, `brand_name`, `description`, `price`, `delivery_time`, and `payment_status` (defaulting to \"Pending\"), while keeping orders scoped to the authenticated caller (principal).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-8"
+        ],
+        "quotes": [
+          "async function addToCart(customerData, productName, sampleImage, brandName, description) {",
+          "product: productName,",
+          "sample_selected: sampleImage,",
+          "brand_name: brandName,",
+          "description: description,",
+          "price: 'Depends on requirement',",
+          "delivery_time: '3 Days',",
+          "payment_status: 'Pending'"
+        ]
+      },
+      "acceptanceCriteria": [
+        "`backend/main.mo` `CustomerOrder` includes fields representing: product, sampleSelected (or sample_selected), brandName, description, price, deliveryTime, paymentStatus, and continues to store owner principal, id, timestamp, and orderStatus/status.",
+        "`addToCart` backend method accepts the new required inputs (at minimum product, sample selection, brand name, description) and persists them on the created order.",
+        "New orders created through Add-to-Cart have paymentStatus set to \"Pending\" by default and include price and delivery time values matching the snippet defaults (\"Depends on requirement\" and \"3 Days\") unless explicitly overridden."
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "text": "Update the frontend Add-to-Cart form in `frontend/src/pages/DashboardPage.tsx` to collect `Shop / Brand Name` (required) and `Description` (with a 1000-word limit), in addition to the existing customer fields and sample name, and submit these new fields through the Add-to-Cart mutation.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-8"
+        ],
+        "quotes": [
+          "if(!brandName) {",
+          "alert('Please enter your Shop / Brand Name')",
+          "if(description.length > 1000) {",
+          "alert('Description exceeds 1000 words limit')",
+          "}"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Dashboard Add-to-Cart form includes inputs for \"Shop / Brand Name\" and \"Description\".",
+        "Submitting without a brand name triggers the exact alert text: \"Please enter your Shop / Brand Name\" and does not call the mutation.",
+        "Submitting with a description exceeding 1000 words triggers the exact alert text: \"Description exceeds 1000 words limit\" and does not call the mutation.",
+        "On valid input, the form calls the Add-to-Cart mutation including the new brand name and description values."
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "text": "Update `frontend/src/hooks/useAddToCart.ts` to pass the expanded payload to the backend Add-to-Cart API, and update the success alert text to match the provided snippet: \"Sample added to cart! Please proceed to payment.\" Keep the error alert text exactly as \"Something went wrong!\".",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-8"
+        ],
+        "quotes": [
+          "alert('Something went wrong!')",
+          "alert('Sample added to cart! Please proceed to payment.')"
+        ]
+      },
+      "acceptanceCriteria": [
+        "`useAddToCart` mutation sends all required fields needed by the updated backend Add-to-Cart method.",
+        "On mutation success, the app shows the exact alert: \"Sample added to cart! Please proceed to payment.\"",
+        "On mutation error, the app shows the exact alert: \"Something went wrong!\""
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "text": "Update the \"My Orders\" display on the Dashboard to include the new order fields returned by `getCallerOrders` (at minimum: product, brand name, and payment status) without breaking existing rendering of timestamp and status.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-8"
+        ],
+        "quotes": [
+          ".from('orders')",
+          ".insert([",
+          "payment_status: 'Pending'"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After placing an order, refreshing or revisiting the Dashboard shows the created order in \"My Orders\".",
+        "Each order card displays product, brand name, and payment status (in English), in addition to existing order metadata already shown."
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "text": "Implement a best-effort \"notification trigger\" step after a successful Add-to-Cart action that mirrors the provided intent to call `/api/notify`, but without introducing Supabase or a non-IC backend: store a notification request record in the Motoko backend that includes name, email, phone, product, sample, brand name, and description so an admin can review it later.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-8"
+        ],
+        "quotes": [
+          "sendNotification(customerData, productName, sampleImage, brandName, description)",
+          "fetch('/api/notify', {",
+          "body: JSON.stringify({",
+          "name: customerData.name,",
+          "email: customerData.email,",
+          "phone: customerData.phone,",
+          "product: productName,",
+          "sample: sampleImage,",
+          "brand_name: brandName,",
+          "description: description"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend persists a notification-request record linked to the created order (or containing equivalent fields) whenever Add-to-Cart succeeds.",
+        "No attempt is made to call a real `/api/notify` HTTP endpoint from the frontend or backend.",
+        "User-facing behavior remains: success and error alerts as specified, with no additional required user steps."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not add or use Supabase (`@supabase/supabase-js`) in this project.",
+    "Use English for all user-facing text.",
+    "Do not edit files under `frontend/src/components/ui` or other immutable frontend paths defined by the system context."
+  ],
+  "nonGoals": [
+    "Implementing real email/WhatsApp delivery or a live `/api/notify` server endpoint.",
+    "Integrating any external database (including Supabase) for order persistence.",
+    "Adding payment processing logic beyond storing/displaying the \"Pending\" payment status and existing Stripe/PayPal mentions."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}
