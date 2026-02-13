@@ -1,45 +1,62 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T17:28:55.653Z",
+  "generatedAt": "2026-02-13T02:30:19.839Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
+    "total": 3,
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-66",
-        "summary": "Update the Home page Premium Services section markup in `frontend/src/pages/HomePage.tsx` so the section that contains the \"Our Premium Services\" heading uses the exact section id `premium-services-old` (i.e., `<section id=\"premium-services-old\">` with `<h2>Our Premium Services</h2>`).",
+        "id": "REQ-1",
+        "summary": "Implement an account creation flow that matches the intent of the provided Supabase HTML snippet (Full Name, Email, Password, Create Account) but uses Internet Identity for authentication (no Supabase) and stores the user profile in the Motoko backend keyed by the caller Principal (treat this Principal as the user id).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/hooks/useUserProfile.ts",
+          "frontend/src/pages/SignUpPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/hooks/useUserProfile.ts",
+          "frontend/src/pages/SignUpPage.tsx"
         ]
       },
       {
-        "id": "REQ-67",
-        "summary": "Update the Home page \"Order Now\" smooth-scroll behavior in `frontend/src/pages/HomePage.tsx` so it scrolls to the section with id `premium-services-old` (instead of the current `services` id), using `scrollIntoView({ behavior: \"smooth\" })`, without adding any raw `<script>` tags.",
+        "id": "REQ-2",
+        "summary": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) without requiring the full multi-field profile form, while keeping the existing `UserProfile` type and stable storage model unchanged.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Frontend: update the Sign Up experience (`frontend/src/pages/SignUpPage.tsx`) to support a simple “Create Account” form that captures Full Name and Email and triggers the new backend basic-profile save after the user authenticates with Internet Identity; avoid asking users for a password since Internet Identity handles authentication.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/pages/SignUpPage.tsx",
+          "frontend/src/hooks/useUserProfile.ts"
         ],
         "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/src/pages/SignUpPage.tsx",
+          "frontend/src/hooks/useUserProfile.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useUserProfile.ts",
+    "frontend/src/pages/SignUpPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

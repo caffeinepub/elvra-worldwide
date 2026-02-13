@@ -23,6 +23,7 @@ export interface AddToCartInput {
   'price' : string,
   'product' : string,
 }
+export interface BasicProfile { 'fullName' : string, 'email' : string }
 export interface ExpandedOrder {
   'id' : bigint,
   'dob' : string,
@@ -107,6 +108,7 @@ export interface _SERVICE {
   'getSupportRequests' : ActorMethod<[], Array<SupportRequest>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'saveBasicProfile' : ActorMethod<[BasicProfile], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'submitSupportRequest' : ActorMethod<[string, string, string], undefined>,
   'updateOrderPaymentStatus' : ActorMethod<[bigint, string], undefined>,

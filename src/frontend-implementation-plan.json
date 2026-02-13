@@ -1,35 +1,51 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Home page Premium Services section id + Order Now smooth-scroll target update",
+  "title": "Simple Internet Identity sign-up (Full Name + Email) with backend basic profile save",
   "requirements": [
     {
-      "id": "REQ-66",
-      "summary": "Change the Home page Premium Services section id to premium-services-old while keeping the exact heading text.",
+      "id": "REQ-1",
+      "summary": "Add an Internet Identity–based account creation flow that collects Full Name + Email (no Supabase, no password) and persists the caller-keyed profile via the backend basic-profile save, making it retrievable via existing profile query hooks.",
       "acceptanceCriteria": [
-        "In `frontend/src/pages/HomePage.tsx`, the section that renders the Premium Services cards has `id=\"premium-services-old\"`.",
-        "The section still renders an `<h2>` with the exact text \"Our Premium Services\"."
+        "Users can create an account without any Supabase dependency or keys.",
+        "Authentication uses the existing Internet Identity login flow.",
+        "After successful signup, a user profile is persisted in the backend and can be retrieved via existing profile query hooks.",
+        "The stored profile includes the user’s Full Name and Email; the user id is represented by the caller Principal (no separate Supabase user id).",
+        "All user-facing UI text for this flow is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/hooks/useUserProfile.ts",
           "operation": "modify",
-          "description": "Update the markup for the section that contains the \"Our Premium Services\" heading and the Premium Services cards so it uses the exact section id `premium-services-old` (replacing the current `services` id), while keeping the `<h2>` text exactly \"Our Premium Services\"."
+          "description": "Add a dedicated React Query mutation hook (e.g., useSaveBasicProfile) that calls the actor’s basic-profile save capability and invalidates/refetches the existing ['currentUserProfile'] query so the saved profile can be retrieved via the existing profile query hook. Use the selected authorization component’s guidance for post-login profile setup patterns; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/SignUpPage.tsx",
+          "operation": "modify",
+          "description": "Refactor the signup flow to match the intent of the provided snippet but using Internet Identity: (1) authenticate via Internet Identity, then (2) capture Full Name + Email, then (3) trigger the new basic-profile save mutation and on success navigate to /dashboard. Remove any password fields and remove/disable the existing multi-field profile requirements for this simple flow. Ensure all user-facing text remains English. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-67",
-      "summary": "Update the Home hero \"Order Now\" button smooth-scroll to target premium-services-old via scrollIntoView without scripts.",
+      "id": "REQ-3",
+      "summary": "Update SignUpPage to provide a simple “Create Account” form (Full Name + Email) after Internet Identity authentication, validate inputs with English errors, call backend basic-profile save, and route to /dashboard on success without modifying immutable auth/actor hooks.",
       "acceptanceCriteria": [
-        "Clicking the \"Order Now\" button in the Home hero smoothly scrolls to the Premium Services section with `id=\"premium-services-old\"`.",
-        "No new raw `<script>` tags are added to `frontend/index.html` to implement this behavior."
+        "The Sign Up page provides an obvious path to: (1) authenticate via Internet Identity, then (2) enter Full Name + Email, then (3) create the account.",
+        "Submitting the form saves the basic profile via the backend and navigates the user to `/dashboard` on success.",
+        "The page does not request or store a password (because authentication is via Internet Identity).",
+        "Form validation prevents submission when Full Name is empty or Email is invalid and shows English error messages.",
+        "No changes are made to immutable frontend paths (e.g., `frontend/src/hooks/useInternetIdentity.ts(x)` and `frontend/src/hooks/useActor.ts`)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/pages/SignUpPage.tsx",
           "operation": "modify",
-          "description": "Update the existing `scrollToServices` (or equivalent) click handler used by the Home hero \"Order Now\" button to locate `document.getElementById('premium-services-old')` and call `scrollIntoView({ behavior: \"smooth\" })`, replacing the current `services` id reference, and implement this purely in React/TypeScript (no raw `<script>` tags)."
+          "description": "Implement the simplified post-auth form UX: show the Internet Identity auth action first; once authenticated, show only Full Name and Email fields with a single “Create Account” submit action. Add client-side validation (required full name, valid email) with English error messages, show submission loading/disabled state, and handle backend authorization/data errors gracefully. Keep navigation to /dashboard on success and keep existing identity-based redirect when a profile already exists. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useUserProfile.ts",
+          "operation": "modify",
+          "description": "Export and wire the new basic-profile save hook for SignUpPage to use (calling the actor’s saveBasicProfile capability), ensuring query invalidation updates getCallerUserProfile consumers without requiring any changes to immutable Internet Identity or actor hooks. Verify the component's usage instructions before implementing."
         }
       ]
     }

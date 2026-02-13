@@ -67,6 +67,10 @@ export interface Sample {
     concentration: string;
     price: string;
 }
+export interface BasicProfile {
+    fullName: string;
+    email: string;
+}
 export interface UserProfile {
     dob: string;
     fullName: string;
@@ -109,6 +113,7 @@ export interface backendInterface {
     getSupportRequests(): Promise<Array<SupportRequest>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    saveBasicProfile(basicProfile: BasicProfile): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitSupportRequest(name: string, email: string, message: string): Promise<void>;
     updateOrderPaymentStatus(orderId: bigint, status: string): Promise<void>;

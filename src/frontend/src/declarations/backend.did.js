@@ -93,6 +93,10 @@ export const SupportRequest = IDL.Record({
   'message' : IDL.Text,
   'timestamp' : Time,
 });
+export const BasicProfile = IDL.Record({
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -128,6 +132,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'saveBasicProfile' : IDL.Func([BasicProfile], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'submitSupportRequest' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),
@@ -222,6 +227,10 @@ export const idlFactory = ({ IDL }) => {
     'message' : IDL.Text,
     'timestamp' : Time,
   });
+  const BasicProfile = IDL.Record({
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -257,6 +266,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'saveBasicProfile' : IDL.Func([BasicProfile], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'submitSupportRequest' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),

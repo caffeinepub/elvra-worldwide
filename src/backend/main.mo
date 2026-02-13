@@ -12,8 +12,6 @@ import List "mo:core/List";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-
-
 actor {
   // Types
   public type Service = {
@@ -85,6 +83,11 @@ actor {
     #shipped;
     #delivered;
     #cancelled;
+  };
+
+  public type BasicProfile = {
+    fullName : Text;
+    email : Text;
   };
 
   module ExpandedOrder {
@@ -177,6 +180,22 @@ actor {
     userProfiles.get(user);
   };
 
+  // Basic Profile Flow for Account Creation
+  public shared ({ caller }) func saveBasicProfile(basicProfile : BasicProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create basic profiles");
+    };
+    let extendedProfile : UserProfile = {
+      fullName = basicProfile.fullName;
+      email = basicProfile.email;
+      mobileNumber = "";
+      dob = "";
+      gender = #other;
+      isVerified = false;
+    };
+    userProfiles.add(caller, extendedProfile);
+  };
+
   // Support Requests
   public shared ({ caller }) func submitSupportRequest(name : Text, email : Text, message : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -225,7 +244,10 @@ actor {
     samples.add(sampleName, sample);
   };
 
-  public query func getSamples() : async [Sample] {
+  public query ({ caller }) func getSamples() : async [Sample] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view samples");
+    };
     samples.values().toArray();
   };
 

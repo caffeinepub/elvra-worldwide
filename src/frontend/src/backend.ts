@@ -149,6 +149,10 @@ export interface Sample {
     concentration: string;
     price: string;
 }
+export interface BasicProfile {
+    fullName: string;
+    email: string;
+}
 export interface UserProfile {
     dob: string;
     fullName: string;
@@ -192,6 +196,7 @@ export interface backendInterface {
     getSupportRequests(): Promise<Array<SupportRequest>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
+    saveBasicProfile(basicProfile: BasicProfile): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitSupportRequest(name: string, email: string, message: string): Promise<void>;
     updateOrderPaymentStatus(orderId: bigint, status: string): Promise<void>;
@@ -435,6 +440,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async saveBasicProfile(arg0: BasicProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveBasicProfile(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveBasicProfile(arg0);
             return result;
         }
     }

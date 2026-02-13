@@ -1,54 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Update Home page Premium Services section id to premium-services-old",
+  "title": "Add simple account creation flow (Full Name + Email) using Internet Identity and backend user profiles",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-66",
-      "text": "Update the Home page Premium Services section markup in `frontend/src/pages/HomePage.tsx` so the section that contains the \"Our Premium Services\" heading uses the exact section id `premium-services-old` (i.e., `<section id=\"premium-services-old\">` with `<h2>Our Premium Services</h2>`).",
-      "target": "frontend",
+      "id": "REQ-1",
+      "text": "Implement an account creation flow that matches the intent of the provided Supabase HTML snippet (Full Name, Email, Password, Create Account) but uses Internet Identity for authentication (no Supabase) and stores the user profile in the Motoko backend keyed by the caller Principal (treat this Principal as the user id).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "<section id=\"premium-services-old\">\n  <h2>Our Premium Services</h2>\n  <!-- old cards -->\n</section>"
+          "<input id=\"name\" placeholder=\"Full Name\" />\n<input id=\"email\" placeholder=\"Email\" />\n<input id=\"password\" type=\"password\" placeholder=\"Password\" />\n<button onclick=\"signUp()\">Create Account</button>\n\n<script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>\n\n<script>\nconst supabase = supabaseJs.createClient(\n  \"SUPABASE_URL_HERE\",\n  \"SUPABASE_ANON_KEY_HERE\"\n);\n\nasync function signUp() {\n  const name = document.getElementById(\"name\").value;\n  const email = document.getElementById(\"email\").value;\n  const password = document.getElementById(\"password\").value;\n\n  const { data, error } = await supabase.auth.signUp({\n    email,\n    password\n  });\n\n  if (error) {\n    alert(error.message);\n    return;\n  }\n\n  await supabase.from(\"users\").insert({\n    id: data.user.id,\n    name: name,\n    email: email\n  });\n\n  alert(\"Account created successfully\");\n}\n</script>"
         ]
       },
       "acceptanceCriteria": [
-        "In `frontend/src/pages/HomePage.tsx`, the section that renders the Premium Services cards has `id=\"premium-services-old\"`.",
-        "The section still renders an `<h2>` with the exact text \"Our Premium Services\"."
+        "Users can create an account without any Supabase dependency or keys.",
+        "Authentication uses the existing Internet Identity login flow.",
+        "After successful signup, a user profile is persisted in the backend and can be retrieved via existing profile query hooks.",
+        "The stored profile includes the user’s Full Name and Email; the user id is represented by the caller Principal (no separate Supabase user id).",
+        "All user-facing UI text for this flow is in English."
       ]
     },
     {
-      "id": "REQ-67",
-      "text": "Update the Home page \"Order Now\" smooth-scroll behavior in `frontend/src/pages/HomePage.tsx` so it scrolls to the section with id `premium-services-old` (instead of the current `services` id), using `scrollIntoView({ behavior: \"smooth\" })`, without adding any raw `<script>` tags.",
-      "target": "frontend",
+      "id": "REQ-2",
+      "text": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) without requiring the full multi-field profile form, while keeping the existing `UserProfile` type and stable storage model unchanged.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "<section id=\"premium-services-old\">\n  <h2>Our Premium Services</h2>\n  <!-- old cards -->\n</section>"
+          "await supabase.from(\"users\").insert({\n    id: data.user.id,\n    name: name,\n    email: email\n  });"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking the \"Order Now\" button in the Home hero smoothly scrolls to the Premium Services section with `id=\"premium-services-old\"`.",
-        "No new raw `<script>` tags are added to `frontend/index.html` to implement this behavior."
+        "A new backend method exists to save basic account details for the caller (full name + email).",
+        "The method persists data into the existing `userProfiles` map keyed by `caller` Principal.",
+        "No breaking changes are introduced to existing `getCallerUserProfile` / `saveCallerUserProfile` behavior."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Frontend: update the Sign Up experience (`frontend/src/pages/SignUpPage.tsx`) to support a simple “Create Account” form that captures Full Name and Email and triggers the new backend basic-profile save after the user authenticates with Internet Identity; avoid asking users for a password since Internet Identity handles authentication.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "<button onclick=\"signUp()\">Create Account</button>"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Sign Up page provides an obvious path to: (1) authenticate via Internet Identity, then (2) enter Full Name + Email, then (3) create the account.",
+        "Submitting the form saves the basic profile via the backend and navigates the user to `/dashboard` on success.",
+        "The page does not request or store a password (because authentication is via Internet Identity).",
+        "Form validation prevents submission when Full Name is empty or Email is invalid and shows English error messages.",
+        "No changes are made to immutable frontend paths (e.g., `frontend/src/hooks/useInternetIdentity.ts(x)` and `frontend/src/hooks/useActor.ts`)."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Do not edit files under `frontend/src/components/ui` or other paths listed as immutable in SYSTEM_CONTEXT.",
-    "Frontend routing must continue to use TanStack Router (no react-router-dom)."
+    "Do not integrate Supabase (`@supabase/supabase-js`) or any third-party auth; only Internet Identity is supported.",
+    "Backend must remain a single Motoko actor in `backend/main.mo`.",
+    "Do not edit files under `frontend/src/components/ui` or other immutable paths listed in SYSTEM_CONTEXT.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "No redesign of service card visuals beyond what is required to change the section id and scroll target.",
-    "No backend changes."
+    "Implement email/password authentication.",
+    "Create or manage a Supabase `users` table or any external database schema.",
+    "Add third-party OAuth providers (Google/Facebook/GitHub/Auth0)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

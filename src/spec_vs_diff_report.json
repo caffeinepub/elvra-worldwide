@@ -1,29 +1,34 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T17:28:55.650Z",
-  "summary": "REQ-67 appears implemented: HomePage now smooth-scrolls to element id \"premium-services-old\" via scrollIntoView. REQ-66 (section id + exact h2 text) is indicated by the diff summary text, but the relevant section markup is not visible in the truncated HomePage.tsx excerpt. Two ancillary files were modified that were not requested by the BuildRequest.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-13T02:30:19.836Z",
+  "summary": "Frontend implements a two-step Internet Identity sign-up flow with Full Name + Email form, validation, and dashboard navigation. A new BasicProfile type and a frontend hook calling `actor.saveBasicProfile` were added. However, the diff summary truncation prevents confirming that the backend actually implements `saveBasicProfile` and that it persists into the existing `userProfiles` map without breaking existing profile methods. Additionally, a summary file describes multiple unrelated UI/route changes not requested.",
+  "missing_requirements": [
     {
-      "description": "Updated/maintained repository meta-summary file content unrelated to changing the Home page section id/scroll target.",
-      "reason": "BuildRequest only asks to update HomePage.tsx section id and smooth-scroll target; it does not request updating summary/metadata files.",
+      "id": "REQ-2",
+      "requirement": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) in the existing `userProfiles` map keyed by `caller`, without breaking existing `getCallerUserProfile` / `saveCallerUserProfile` behavior.",
+      "reason": "Frontend calls `actor.saveBasicProfile(...)`, but the backend diff is truncated before showing any implementation of a `saveBasicProfile` method or confirming it writes into the existing `userProfiles` map while preserving existing behaviors.",
       "evidence": [
-        "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Updated/maintained project state metadata (project_state.json) unrelated to the requested Home page id/scroll behavior change.",
-      "reason": "BuildRequest is frontend-only and specifically scoped to HomePage.tsx changes; project_state.json updates are not requested.",
-      "evidence": [
-        "project_state.json"
+        "frontend/src/hooks/useUserProfile.ts",
+        "backend/main.mo (truncated at `public shared ({ caller }) func save ...`)"
       ]
     }
   ],
-  "confidence": 0.62,
+  "hallucinated_features": [
+    {
+      "description": "Documentation/summary indicates many unrelated frontend changes (branding layout/header/footer, payment routes, OTP demo component, contact page rewrite, pricing page payment mentions, etc.) that were not requested as part of the sign-up/account creation flow work.",
+      "reason": "These changes are not part of REQ-1/REQ-2/REQ-3 and are only mentioned in the modified `frontend-file-summaries.txt`, suggesting scope creep (at least in documented changes).",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    }
+  ],
+  "confidence": 0.55,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/hooks/useUserProfile.ts",
+    "frontend/src/pages/SignUpPage.tsx",
     "project_state.json"
   ]
 }
