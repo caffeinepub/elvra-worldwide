@@ -6,6 +6,8 @@ import { useGetCallerUserProfile } from '../hooks/useUserProfile';
 import { useAddToCart, useGetCallerOrders } from '../hooks/useAddToCart';
 import { useIsCallerAdmin, useVerifyPaymentAndConfirmOrder } from '../hooks/useAdminOrderVerification';
 import ServiceCard from '../components/ServiceCard';
+import AdminGate from '../components/AdminGate';
+import ProductBannerSamplesAdminPanel from '../components/admin/ProductBannerSamplesAdminPanel';
 import { Package, MessageSquare, User, ShoppingCart, Truck, CheckCircle2, Clock, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Gender, OrderStatus, PaymentStatus } from '../backend';
 import { validateDescription, countWords } from '../utils/validation';
-import { mapServiceToDisplay } from '../constants/premiumServices';
+import { getPremiumServiceByName } from '../constants/premiumServices';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -162,204 +164,199 @@ export default function DashboardPage() {
     }
   };
 
-  const canTrackOrder = (order: any) => {
-    return order.paymentStatus === PaymentStatus.verified && order.orderStatus === OrderStatus.confirmed;
-  };
-
   const handleVerifyPayment = async (orderId: bigint) => {
-    if (confirm('Are you sure you want to verify this payment and confirm the order?')) {
-      try {
-        await verifyPaymentMutation.mutateAsync(orderId);
-        alert('Payment verified and order confirmed successfully!');
-      } catch (error) {
-        alert('Failed to verify payment. Please try again.');
-      }
+    try {
+      await verifyPaymentMutation.mutateAsync(orderId);
+    } catch (error) {
+      console.error('Payment verification error:', error);
     }
   };
 
+  const handleTrackOrder = (orderId: bigint) => {
+    navigate({ to: '/track-order/$orderId', params: { orderId: orderId.toString() } });
+  };
+
   return (
-    <div className="min-h-screen py-16 md:py-24">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Dashboard</h1>
-          <p className="text-lg text-muted-foreground">
-            Welcome back, {userProfile?.fullName || 'User'}! Manage your orders and profile.
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold font-serif text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Manage your orders and account</p>
         </div>
 
-        {/* Admin Section */}
-        {isAdmin && (
-          <Card className="mb-8 border-primary/30 shadow-luxury">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+        <AdminGate>
+          <Card className="border-primary/20 shadow-luxury">
+            <CardHeader className="bg-primary/5">
+              <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Admin: Payment Verification
-              </CardTitle>
-              <CardDescription>
-                Verify payments and confirm orders for customers
-              </CardDescription>
+                <CardTitle>Admin Panel</CardTitle>
+              </div>
+              <CardDescription>Administrative tools and settings</CardDescription>
             </CardHeader>
-            <CardContent>
-              {orders && orders.length > 0 ? (
-                <div className="space-y-4">
-                  {orders
-                    .filter(order => order.paymentStatus === PaymentStatus.paidSubmitted)
-                    .map((order) => (
-                      <Card key={order.id.toString()} className="border-blue-200 dark:border-blue-800">
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">Order #{order.id.toString()}</p>
-                                {getPaymentStatusBadge(order.paymentStatus)}
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Customer: {order.name} | Product: {order.product}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Email: {order.email} | Phone: {order.phone}
-                              </p>
-                            </div>
-                            <Button
-                              onClick={() => handleVerifyPayment(order.id)}
-                              disabled={verifyPaymentMutation.isPending}
-                              className="shadow-luxury"
-                            >
-                              {verifyPaymentMutation.isPending ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Verifying...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                                  Verify & Confirm
-                                </>
-                              )}
-                            </Button>
+            <CardContent className="pt-6 space-y-6">
+              <ProductBannerSamplesAdminPanel />
+              
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Payment Verification</h3>
+                {orders && orders.length > 0 ? (
+                  <div className="space-y-3">
+                    {orders
+                      .filter(order => order.paymentStatus === PaymentStatus.paidSubmitted)
+                      .map(order => (
+                        <div key={order.id.toString()} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">Order #{order.id.toString()}</p>
+                            <p className="text-sm text-muted-foreground">{order.name} - {order.product}</p>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  {orders.filter(order => order.paymentStatus === PaymentStatus.paidSubmitted).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No orders awaiting verification
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No orders to display
-                </p>
-              )}
+                          <Button
+                            onClick={() => handleVerifyPayment(order.id)}
+                            disabled={verifyPaymentMutation.isPending}
+                            size="sm"
+                          >
+                            {verifyPaymentMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verifying...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Verify Payment
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    {orders.filter(order => order.paymentStatus === PaymentStatus.paidSubmitted).length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">No pending payment verifications</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No orders to verify</p>
+                )}
+              </div>
             </CardContent>
           </Card>
-        )}
+        </AdminGate>
 
-        {/* My Orders Section */}
-        <Card className="mb-8 shadow-luxury">
+        <Card className="shadow-luxury">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              My Orders
-            </CardTitle>
-            <CardDescription>View and track your orders</CardDescription>
+            <div className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              <CardTitle>Order Tracking</CardTitle>
+            </div>
+            <CardDescription>Track your orders and view delivery status</CardDescription>
           </CardHeader>
           <CardContent>
             {orders && orders.length > 0 ? (
               <div className="space-y-4">
-                {orders.map((order) => (
-                  <Card key={order.id.toString()} className="border-muted">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium">Order #{order.id.toString()}</p>
-                            {getOrderStatusBadge(order.orderStatus)}
-                            {getPaymentStatusBadge(order.paymentStatus)}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {order.product} - {order.sampleSelected}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Price: {order.price} | Delivery: {order.deliveryTime}
-                          </p>
+                {orders.map(order => {
+                  const canTrack = order.paymentStatus === PaymentStatus.verified && order.orderStatus === OrderStatus.confirmed;
+                  return (
+                    <div key={order.id.toString()} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="font-semibold">Order #{order.id.toString()}</p>
+                          <p className="text-sm text-muted-foreground">{order.product}</p>
+                          <p className="text-sm text-muted-foreground">{order.price} • {order.deliveryTime}</p>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          {canTrackOrder(order) ? (
-                            <Button
-                              onClick={() => navigate({ to: '/track-order/$orderId', params: { orderId: order.id.toString() } })}
-                              variant="outline"
-                              size="sm"
-                            >
-                              <Truck className="mr-2 h-4 w-4" />
-                              Track Order
-                            </Button>
-                          ) : (
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>Tracking available after verification</span>
-                            </div>
-                          )}
+                        <div className="flex flex-col gap-2 items-end">
+                          {getOrderStatusBadge(order.orderStatus)}
+                          {getPaymentStatusBadge(order.paymentStatus)}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <Button
+                        onClick={() => handleTrackOrder(order.id)}
+                        disabled={!canTrack}
+                        variant={canTrack ? 'default' : 'outline'}
+                        size="sm"
+                        className="w-full"
+                      >
+                        {canTrack ? (
+                          <>
+                            <Package className="mr-2 h-4 w-4" />
+                            Track Order
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="mr-2 h-4 w-4" />
+                            Awaiting Payment Verification
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No orders yet. Start by selecting a service below!
-              </p>
+              <p className="text-center text-muted-foreground py-8">No orders yet</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Services Section */}
-        <Card className="mb-8 shadow-luxury">
+        <Card className="shadow-luxury">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-primary" />
-              Available Services
-            </CardTitle>
-            <CardDescription>Select a service to get started</CardDescription>
+              <CardTitle>Available Services</CardTitle>
+            </div>
+            <CardDescription>Browse and order our premium design services</CardDescription>
           </CardHeader>
           <CardContent>
             {servicesLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {services?.map((service) => {
-                  const displayInfo = mapServiceToDisplay(service.name);
+            ) : services && services.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {services.map(service => {
+                  const premiumService = getPremiumServiceByName(service.name);
+                  const icon = premiumService?.icon || '';
+                  const priceLabel = `$${service.priceUSD}`;
+                  
                   return (
-                    <div key={service.id.toString()} onClick={() => handleServiceSelect(service)}>
-                      <ServiceCard
-                        icon={displayInfo?.icon}
-                        name={service.name}
-                        priceLabel={displayInfo?.priceLabel || `$${service.priceUSD}`}
-                        deliveryTime={service.deliveryTime}
-                      />
-                    </div>
+                    <ServiceCard
+                      key={service.id.toString()}
+                      icon={icon}
+                      name={service.name}
+                      priceLabel={priceLabel}
+                      deliveryTime={service.deliveryTime}
+                      action={
+                        <Button
+                          onClick={() => handleServiceSelect(service)}
+                          size="sm"
+                          className="w-full shadow-luxury"
+                        >
+                          Select Service
+                        </Button>
+                      }
+                    />
                   );
                 })}
               </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No services available</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Order Form */}
         {formData.product && (
-          <Card className="mb-8 shadow-luxury border-primary/20">
+          <Card className="shadow-luxury">
             <CardHeader>
-              <CardTitle>Order Details</CardTitle>
-              <CardDescription>Fill in your order information</CardDescription>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                <CardTitle>Create Order</CardTitle>
+              </div>
+              <CardDescription>
+                Selected: {formData.product} • {formData.price} • {formData.deliveryTime}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -369,28 +366,29 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="your@email.com"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="Enter your phone number"
+                    placeholder="+1 234 567 8900"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
+                  <Label htmlFor="dob">Date of Birth *</Label>
                   <Input
                     id="dob"
                     type="date"
@@ -400,8 +398,11 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value as Gender)}>
+                  <Label htmlFor="gender">Gender *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => handleInputChange('gender', value as Gender)}
+                  >
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -414,78 +415,62 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sample">Select Sample</Label>
-                  <Select value={formData.selectedSample} onValueChange={(value) => handleInputChange('selectedSample', value)}>
+                  <Label htmlFor="sample">Sample Selection *</Label>
+                  <Select
+                    value={formData.selectedSample}
+                    onValueChange={(value) => handleInputChange('selectedSample', value)}
+                  >
                     <SelectTrigger id="sample">
-                      <SelectValue placeholder="Choose a sample" />
+                      <SelectValue placeholder="Select a sample" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Sample 1">Sample 1</SelectItem>
-                      <SelectItem value="Sample 2">Sample 2</SelectItem>
-                      <SelectItem value="Sample 3">Sample 3</SelectItem>
-                      <SelectItem value="Sample 4">Sample 4</SelectItem>
+                      <SelectItem value="sample1">Sample 1</SelectItem>
+                      <SelectItem value="sample2">Sample 2</SelectItem>
+                      <SelectItem value="sample3">Sample 3</SelectItem>
+                      <SelectItem value="sample4">Sample 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="brandName">Brand Name</Label>
+                <Label htmlFor="brandName">Shop / Brand Name *</Label>
                 <Input
                   id="brandName"
                   value={formData.brandName}
                   onChange={(e) => handleInputChange('brandName', e.target.value)}
-                  placeholder="Enter your brand name"
+                  placeholder="Enter your Shop / Brand Name"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description *</Label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe your requirements (max 1000 words)"
-                  className="w-full min-h-[120px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Describe your requirements..."
+                  rows={5}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <p className="text-sm text-muted-foreground">
-                  {wordCount} / 1000 words
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                <p className="text-sm font-medium">Order Summary</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Service:</span>
-                  <span className="font-medium">{formData.product}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Price:</span>
-                  <span className="font-medium text-primary">{formData.price}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Delivery:</span>
-                  <span className="font-medium">{formData.deliveryTime}</span>
-                </div>
+                <p className="text-sm text-muted-foreground text-right">{wordCount} / 1000 words</p>
               </div>
 
               <Button
                 onClick={handleAddToCart}
                 disabled={addToCartMutation.isPending}
-                className="w-full shadow-luxury"
                 size="lg"
+                className="w-full shadow-luxury"
               >
                 {addToCartMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Creating Order...
                   </>
                 ) : (
                   <>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart & Proceed to Payment
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Add to Cart & Proceed
                   </>
                 )}
               </Button>
@@ -493,84 +478,68 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Support Requests Section */}
-        <Card className="mb-8 shadow-luxury">
+        <Card className="shadow-luxury">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-primary" />
-              Support Requests
-            </CardTitle>
-            <CardDescription>Your support request history</CardDescription>
+              <CardTitle>Support Requests</CardTitle>
+            </div>
+            <CardDescription>Your submitted support requests</CardDescription>
           </CardHeader>
           <CardContent>
             {supportRequests && supportRequests.length > 0 ? (
               <div className="space-y-4">
                 {supportRequests.map((request, index) => (
-                  <Card key={index} className="border-muted">
-                    <CardContent className="pt-6">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">{request.name}</p>
-                        <p className="text-sm text-muted-foreground">{request.email}</p>
-                        <p className="text-sm">{request.message}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(Number(request.timestamp) / 1000000).toLocaleString()}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div key={index} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <p className="font-semibold">{request.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(Number(request.timestamp) / 1000000).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{request.email}</p>
+                    <p className="text-sm">{request.message}</p>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No support requests yet.
-              </p>
+              <p className="text-center text-muted-foreground py-8">No support requests</p>
             )}
           </CardContent>
         </Card>
 
-        {/* User Profile Section */}
         <Card className="shadow-luxury">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              Profile Information
-            </CardTitle>
-            <CardDescription>Your account details</CardDescription>
+              <CardTitle>User Profile</CardTitle>
+            </div>
+            <CardDescription>Your account information</CardDescription>
           </CardHeader>
           <CardContent>
             {userProfile ? (
               <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Full Name:</span>
-                  <span className="text-sm font-medium">{userProfile.fullName}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Email:</span>
-                  <span className="text-sm font-medium">{userProfile.email}</span>
-                </div>
-                {userProfile.mobileNumber && (
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Mobile:</span>
-                    <span className="text-sm font-medium">{userProfile.mobileNumber}</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Full Name</p>
+                    <p className="font-medium">{userProfile.fullName}</p>
                   </div>
-                )}
-                {userProfile.dob && (
-                  <div className="flex justify-between py-2 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Date of Birth:</span>
-                    <span className="text-sm font-medium">{userProfile.dob}</span>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">{userProfile.email}</p>
                   </div>
-                )}
-                <div className="flex justify-between py-2">
-                  <span className="text-sm text-muted-foreground">Verification Status:</span>
-                  <Badge variant={userProfile.isVerified ? "default" : "outline"}>
-                    {userProfile.isVerified ? "Verified" : "Not Verified"}
-                  </Badge>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Mobile</p>
+                    <p className="font-medium">{userProfile.mobileNumber || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date of Birth</p>
+                    <p className="font-medium">{userProfile.dob || 'Not provided'}</p>
+                  </div>
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No profile information available.
-              </p>
+              <p className="text-center text-muted-foreground py-8">No profile information</p>
             )}
           </CardContent>
         </Card>

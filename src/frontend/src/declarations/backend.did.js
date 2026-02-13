@@ -8,6 +8,17 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
 export const Gender = IDL.Variant({
   'other' : IDL.Null,
   'female' : IDL.Null,
@@ -95,6 +106,17 @@ export const UserProfile = IDL.Record({
   'isVerified' : IDL.Bool,
   'gender' : Gender,
 });
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const ProductBannerSample = IDL.Record({
+  'file' : ExternalBlob,
+  'description' : IDL.Text,
+});
+export const ProductBanners = IDL.Record({
+  'sample1' : IDL.Opt(ProductBannerSample),
+  'sample2' : IDL.Opt(ProductBannerSample),
+  'sample3' : IDL.Opt(ProductBannerSample),
+  'sample4' : IDL.Opt(ProductBannerSample),
+});
 export const Sample = IDL.Record({
   'description' : IDL.Text,
   'sampleName' : IDL.Text,
@@ -146,8 +168,38 @@ export const TransformationOutput = IDL.Record({
   'body' : IDL.Vec(IDL.Nat8),
   'headers' : IDL.Vec(http_header),
 });
+export const ProductBannerSampleUpdate = IDL.Record({
+  'sample' : IDL.Opt(ProductBannerSample),
+  'position' : IDL.Nat,
+});
 
 export const idlService = IDL.Service({
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
+      ['query'],
+    ),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addSample' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [], []),
   'addService' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Nat], []),
@@ -183,6 +235,7 @@ export const idlService = IDL.Service({
       [IDL.Vec(ExpandedOrder)],
       ['query'],
     ),
+  'getProductBannerSamples' : IDL.Func([], [ProductBanners], ['query']),
   'getSamples' : IDL.Func([], [IDL.Vec(Sample)], ['query']),
   'getServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
   'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
@@ -210,12 +263,28 @@ export const idlService = IDL.Service({
     ),
   'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, PaymentStatus], [], []),
   'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
+  'updateProductBannerSamples' : IDL.Func(
+      [IDL.Vec(ProductBannerSampleUpdate)],
+      [],
+      [],
+    ),
   'verifyPaymentAndConfirmOrder' : IDL.Func([IDL.Nat], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
+  });
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
   const Gender = IDL.Variant({
     'other' : IDL.Null,
     'female' : IDL.Null,
@@ -303,6 +372,17 @@ export const idlFactory = ({ IDL }) => {
     'isVerified' : IDL.Bool,
     'gender' : Gender,
   });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const ProductBannerSample = IDL.Record({
+    'file' : ExternalBlob,
+    'description' : IDL.Text,
+  });
+  const ProductBanners = IDL.Record({
+    'sample1' : IDL.Opt(ProductBannerSample),
+    'sample2' : IDL.Opt(ProductBannerSample),
+    'sample3' : IDL.Opt(ProductBannerSample),
+    'sample4' : IDL.Opt(ProductBannerSample),
+  });
   const Sample = IDL.Record({
     'description' : IDL.Text,
     'sampleName' : IDL.Text,
@@ -351,8 +431,38 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(http_header),
   });
+  const ProductBannerSampleUpdate = IDL.Record({
+    'sample' : IDL.Opt(ProductBannerSample),
+    'position' : IDL.Nat,
+  });
   
   return IDL.Service({
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
+        ['query'],
+      ),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addSample' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [], []),
     'addService' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Nat], []),
@@ -388,6 +498,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ExpandedOrder)],
         ['query'],
       ),
+    'getProductBannerSamples' : IDL.Func([], [ProductBanners], ['query']),
     'getSamples' : IDL.Func([], [IDL.Vec(Sample)], ['query']),
     'getServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
     'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
@@ -415,6 +526,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, PaymentStatus], [], []),
     'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
+    'updateProductBannerSamples' : IDL.Func(
+        [IDL.Vec(ProductBannerSampleUpdate)],
+        [],
+        [],
+      ),
     'verifyPaymentAndConfirmOrder' : IDL.Func([IDL.Nat], [], []),
   });
 };

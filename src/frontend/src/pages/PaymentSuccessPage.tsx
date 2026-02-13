@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useGetStripeSessionStatus, useVerifyPaymentAndConfirmOrder } from '../hooks/useStripeVerification';
 import { useGetCallerOrders } from '../hooks/useAddToCart';
-import { getStripeSessionId } from '../utils/urlParams';
+import { getUrlParameter } from '../utils/urlParams';
 import { CheckCircle2, Loader2, AlertCircle, Home, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ export default function PaymentSuccessPage() {
     const verifyStripePayment = async () => {
       try {
         // Get session ID from URL
-        const sessionId = getStripeSessionId();
+        const sessionId = getUrlParameter('session_id');
         if (!sessionId) {
           setErrorMessage('No payment session found. Please try again.');
           setVerificationState('error');

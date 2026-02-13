@@ -1,128 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Restore product click routes and full checkout flow with real Stripe payment",
-  "priority": "high",
+  "title": "Replace Product Banner Sample 1–4 images in Explore Our Work and rebuild/deploy",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the 'Explore Our Work' product grid so that clicking a product navigates to an existing product detail route instead of a missing route (currently the product grid navigates to '/business-card', '/logo-design', '/product-banner', '/photo-frame' but the router defines '/products/business-card', '/products/logo-design', '/products/product-banner', '/products/photo-frame').",
+      "text": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-12"
         ],
         "quotes": [
-          "explore our work me jitne product hai un par click karta hu to not found kyu likh kar aa raha hai phle sab thik tha",
-          "Ha purana flow bapas kare or product list hai but product list par click karte hai to not found ka page open hota hai"
+          "existing sample photos  ko explore our work → product banner → sample 1 sample 2 sample 3 sample 4 hata kar  replace karna hai",
+          "Aap sequence se laga do poori tarah se delete karna",
+          "Build shuru karo"
         ]
       },
       "acceptanceCriteria": [
-        "From the Home page 'Explore Our Work' section, clicking each product opens its corresponding product page without showing a Not Found screen.",
-        "The product navigation URLs match the routes registered in frontend/src/App.tsx."
+        "The following public URLs still exist and return images, but now display the newly provided designs: `/assets/generated/sample1.dim_1200x800.jpg`, `/assets/generated/sample2.dim_1200x800.jpg`, `/assets/generated/sample3.dim_1200x800.jpg`, `/assets/generated/sample4.dim_1200x800.jpg`.",
+        "The four new images are applied in sequence using the first four uploaded files in the upload order: (1) `Screenshot_20260213-192911 (1).png` → Sample 1, (2) `Screenshot_20260213-192903 (1).png` → Sample 2, (3) `Screenshot_20260213-192858 (1).png` → Sample 3, (4) `Screenshot_20260213-192911 (1)-1.png` → Sample 4.",
+        "Old sample images are no longer present in the repository under those sample1–sample4 filenames (they are overwritten/replaced).",
+        "On the Dashboard ordering flow sample selector (`frontend/src/components/ProductSampleSelector.tsx`), selecting Sample 1–4 shows the replaced images (via fallbackUrl when backend samples are null)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Restore the end-to-end purchase flow for each product to match the previous behavior: product detail (including sample selection) → add to cart → customer form submission → payment step → thank you/order confirmed experience → 'Track My Order' for the created order.",
+      "text": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-1",
+          "msg-12"
         ],
         "quotes": [
-          "phle sab thik tha product par click karte the sample dikhane Lagte the add to Cart ka option aata tha fir customer form fill karte the fir payment ka option aata tha fir payment received hone ke baad thank you order confirmed aata tha fir track my order dikhata tha lekin ab kuch nhi dikhata hai bhai phle jaisa kar"
+          "🙏 We hit a snag during deployment",
+          "Build shuru karo"
         ]
       },
       "acceptanceCriteria": [
-        "After submitting an order via the product add-to-cart/customer form flow, the app routes the user to /payment/$orderId for the newly created order.",
-        "After successful payment completion, the user sees a thank-you / order-confirmed screen with an actionable 'Track My Order' button that routes to /track-order/$orderId.",
-        "The Track Order page loads the correct order and does not show 'not found' for a valid orderId owned by the caller."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Replace the current demo payment behavior on the Payment page with real Stripe payment initiation so users can complete an actual payment for the order (no fake/simulated payment).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "payment ko option implement karna hai",
-          "mujhe fake payment nhi leni hai mujhe real payment received karni hai",
-          "Ha Mai stripe real payment enable karwana chahta hu"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The Payment page no longer labels the flow as a demo and no longer navigates directly to /payment-success/$orderId without completing Stripe payment.",
-        "Clicking the payment CTA initiates a real Stripe payment flow (e.g., redirect to Stripe Checkout or confirm a PaymentIntent) using credentials that are not exposed as a Stripe secret key in the frontend bundle.",
-        "After Stripe indicates success, the app returns to the app and associates the successful payment with the correct orderId."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Ha Mai stripe real payment enable karwana chahta hu"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes an admin-only method to set/update required Stripe configuration (at minimum a Stripe secret key; include any other required fields for the chosen Stripe flow).",
-        "Backend exposes a user-authorized method that, given an orderId owned by the caller, creates a Stripe payment session/intention for that order and returns the data the frontend needs to proceed (e.g., a Checkout URL or client_secret).",
-        "Backend exposes a method to verify a completed Stripe payment for an order (e.g., by retrieving the Checkout Session / PaymentIntent from Stripe) and updates the order payment status accordingly.",
-        "A user cannot create or verify Stripe payment for an order they do not own."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the post-payment success experience so it reflects real Stripe payment completion: only show 'payment received/confirmed' messaging after Stripe verification succeeds, then transition the order into the correct paid/confirmed state and keep the 'Explore Home' and 'Track My Order' actions working.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "payment received hone ke baad thank you order confirmed aata tha"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The success page does not mark payment as received unless Stripe verification for the payment succeeds.",
-        "On successful verification, the order's paymentStatus is updated to the appropriate paid/verified/confirmed state consistent with backend rules.",
-        "The success UI includes working navigation to Home and to /track-order/$orderId."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Create and wire an explicit Order Confirmation page (currently empty) into the router and checkout flow, so that the user has a dedicated thank-you/order-confirmed screen reachable only after completing the payment step.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "thank you order confirmed aata tha"
-        ]
-      },
-      "acceptanceCriteria": [
-        "frontend/src/pages/OrderConfirmationPage.tsx contains a real UI (not empty) that summarizes confirmation and provides 'Track My Order' and 'Explore Home' actions in English.",
-        "A route exists for the order confirmation page and it is only reachable after successful payment completion (direct navigation without completing payment results in a safe redirect or an informative error state)."
+        "Build completes successfully without errors.",
+        "Deployment completes successfully and the updated draft/preview app reflects the new Sample 1–4 images in the Product Banner sample selector."
       ]
     }
   ],
   "constraints": [
-    "All user-facing text introduced or modified for this change must be in English.",
-    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if a stable-state upgrade is required."
+    "Use English for any user-facing text.",
+    "Do not modify any files under `frontend/src/components/ui` (read-only Shadcn components).",
+    "Do not modify any files listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
+    "Backend must remain single-actor (all Motoko logic in `backend/main.mo`); add/adjust `backend/migration.mo` only if required for state compatibility."
   ],
   "nonGoals": [
-    "Implementing Razorpay payments (requested initially but not supported in this platform).",
-    "Adding third-party authentication providers (only Internet Identity).",
-    "Adding real-time features (WebSockets/push)."
+    "Do not change the Product Banner design preview images (`/assets/generated/product-banner-original...` and `/assets/generated/product-banner-duplicate-with-photo...`).",
+    "Do not redesign the layout or add new product sections.",
+    "Do not add new authentication methods beyond Internet Identity.",
+    "Do not implement new admin features (admin upload UI and backend APIs already exist)."
   ],
   "imageRequirements": {
     "required": [],

@@ -7,6 +7,17 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export class ExternalBlob {
+    getBytes(): Promise<Uint8Array<ArrayBuffer>>;
+    getDirectURL(): string;
+    static fromURL(url: string): ExternalBlob;
+    static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
+    withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
+}
+export interface ProductBannerSample {
+    file: ExternalBlob;
+    description: string;
+}
 export interface TransformationOutput {
     status: bigint;
     body: Uint8Array;
@@ -31,6 +42,46 @@ export interface ExpandedOrder {
     price: string;
     product: string;
 }
+export interface BasicProfile {
+    fullName: string;
+    email: string;
+}
+export interface ProductBanners {
+    sample1?: ProductBannerSample;
+    sample2?: ProductBannerSample;
+    sample3?: ProductBannerSample;
+    sample4?: ProductBannerSample;
+}
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
+export interface ConfirmationEmailRequest {
+    confirmationMessageTemplate: string;
+    orderId: bigint;
+    timestamp: Time;
+    customerEmail: string;
+}
+export interface ProductBannerSampleUpdate {
+    sample?: ProductBannerSample;
+    position: bigint;
+}
+export type StripeSessionStatus = {
+    __kind__: "completed";
+    completed: {
+        userPrincipal?: string;
+        response: string;
+    };
+} | {
+    __kind__: "failed";
+    failed: {
+        error: string;
+    };
+};
+export interface StripeConfiguration {
+    allowedCountries: Array<string>;
+    secretKey: string;
+}
 export interface Service {
     id: bigint;
     name: string;
@@ -42,10 +93,6 @@ export interface Sample {
     sampleName: string;
     concentration: string;
     price: string;
-}
-export interface BasicProfile {
-    fullName: string;
-    email: string;
 }
 export interface http_header {
     value: string;
@@ -91,32 +138,6 @@ export interface SupportRequest {
     email: string;
     message: string;
     timestamp: Time;
-}
-export interface TransformationInput {
-    context: Uint8Array;
-    response: http_request_result;
-}
-export interface ConfirmationEmailRequest {
-    confirmationMessageTemplate: string;
-    orderId: bigint;
-    timestamp: Time;
-    customerEmail: string;
-}
-export type StripeSessionStatus = {
-    __kind__: "completed";
-    completed: {
-        userPrincipal?: string;
-        response: string;
-    };
-} | {
-    __kind__: "failed";
-    failed: {
-        error: string;
-    };
-};
-export interface StripeConfiguration {
-    allowedCountries: Array<string>;
-    secretKey: string;
 }
 export interface UserProfile {
     dob: string;
@@ -165,6 +186,7 @@ export interface backendInterface {
     getConfirmationMessageTemplate(): Promise<string>;
     getCustomerOrders(customerName: string): Promise<Array<ExpandedOrder>>;
     getOrdersByStatus(status: OrderStatus): Promise<Array<ExpandedOrder>>;
+    getProductBannerSamples(): Promise<ProductBanners>;
     getSamples(): Promise<Array<Sample>>;
     getServices(): Promise<Array<Service>>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
@@ -180,5 +202,6 @@ export interface backendInterface {
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateOrderPaymentStatus(orderId: bigint, status: PaymentStatus): Promise<void>;
     updateOrderStatus(orderId: bigint, status: OrderStatus): Promise<void>;
+    updateProductBannerSamples(updates: Array<ProductBannerSampleUpdate>): Promise<void>;
     verifyPaymentAndConfirmOrder(orderId: bigint): Promise<void>;
 }

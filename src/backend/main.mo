@@ -3,21 +3,23 @@ import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
-import Text "mo:core/Text";
 import Time "mo:core/Time";
-import Runtime "mo:core/Runtime";
+import Text "mo:core/Text";
 import OutCall "http-outcalls/outcall";
 import Stripe "stripe/stripe";
 import Order "mo:core/Order";
 import List "mo:core/List";
 import Principal "mo:core/Principal";
-import Migration "migration";
+import Runtime "mo:core/Runtime";
+import Storage "blob-storage/Storage";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+import MixinStorage "blob-storage/Mixin";
+
 // Apply migration in with clause
-(with migration = Migration.run)
+
 actor {
   // ==== Types ====
   public type Service = {
@@ -87,6 +89,16 @@ actor {
     orderStatus : OrderStatus;
     paymentStatus : PaymentStatus;
     timestamp : Time.Time;
+  };
+
+  public type ProductBannerSample = {
+    file : Storage.ExternalBlob;
+    description : Text;
+  };
+
+  public type ProductBannerSampleUpdate = {
+    position : Nat;
+    sample : ?ProductBannerSample;
   };
 
   public type OrderStatus = {
@@ -183,9 +195,44 @@ actor {
   var nextConfirmationEmailRequestId = 1;
   var stripeConfiguration : ?StripeConfiguration = null;
 
+  // New Product banners
+  public type ProductBanners = {
+    sample1 : ?ProductBannerSample;
+    sample2 : ?ProductBannerSample;
+    sample3 : ?ProductBannerSample;
+    sample4 : ?ProductBannerSample;
+  };
+  var bannerSamples : ProductBanners = {
+    sample1 = null;
+    sample2 = null;
+    sample3 = null;
+    sample4 = null;
+  };
+
   // ==== Initialize authorization ====
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+  include MixinStorage();
+
+  // ==== Product Banners API ====
+  public query func getProductBannerSamples() : async ProductBanners {
+    bannerSamples;
+  };
+
+  public shared ({ caller }) func updateProductBannerSamples(updates : [ProductBannerSampleUpdate]) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can modify product samples");
+    };
+    updates.forEach(func(update) {
+      switch (update.position) {
+        case (1) { bannerSamples := { bannerSamples with sample1 = update.sample } };
+        case (2) { bannerSamples := { bannerSamples with sample2 = update.sample } };
+        case (3) { bannerSamples := { bannerSamples with sample3 = update.sample } };
+        case (4) { bannerSamples := { bannerSamples with sample4 = update.sample } };
+        case (_) { Runtime.trap("Invalid sample position") };
+      };
+    });
+  };
 
   // ==== Add Service ====
   public shared ({ caller }) func addService(
@@ -547,3 +594,4 @@ actor {
     "Thank you for your order, {customer_name}! Your order ID is {order_id}. ...";
   };
 };
+

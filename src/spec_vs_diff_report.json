@@ -1,50 +1,57 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T12:40:58.818Z",
-  "summary": "Diff implements corrected product grid navigation to /products/* routes, restores add-to-cart→/payment/$orderId routing, adds Stripe Checkout initiation from PaymentPage via backend actor call, and adds a non-empty Order Confirmation page wired into the router and reached after payment success verification flow. Backend Stripe support and access-control requirements are only partially evidenced due to truncation of backend/main.mo (types/imports/migration shown, but required public methods and authorization checks are not visible in the diff summary).",
+  "generatedAt": "2026-02-13T14:34:01.697Z",
+  "summary": "The diff does not show evidence that the four fallback sample images under `/assets/generated/sample1–sample4.dim_1200x800.jpg` were actually replaced, nor any changes to the frontend sample-slot hook/selector wiring. It also includes several changes that were not requested (a deploy marker file, project state metadata updates, and backend code modifications).",
   "missing_requirements": [
     {
-      "id": "REQ-4",
-      "requirement": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
-      "reason": "The diff shows new Stripe-related types, imports, and a stable-state migration adding stripeConfiguration, but does not show the required backend public methods (admin-only set/update config; user-authorized create session for owned order; verify completed payment and update order status; ownership enforcement). Because backend/main.mo is truncated, these methods cannot be confirmed from the provided evidence.",
+      "id": "REQ-1",
+      "requirement": "Replace the four static fallback Product Banner sample images (sample1–sample4.dim_1200x800.jpg referenced by useSampleSlots in frontend/src/hooks/useProductBannerSamples.ts) with the provided uploaded images in order, so Sample 1–4 display the new images even when backend has no stored samples.",
+      "reason": "The diff summary does not show any modifications/additions to the actual image files under `frontend/public/assets/generated/` (or equivalent) and does not show any changes to `frontend/src/hooks/useProductBannerSamples.ts` or `frontend/src/components/ProductSampleSelector.tsx` confirming the fallback URLs now point to replaced assets. Only a text marker file claims the mapping.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "backend/migration.mo"
+        "frontend/public/deploy-marker.txt",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Rebuild and redeploy the app after the image replacement, fixing any build/deploy errors so the draft/preview updates.",
+      "reason": "No build/deploy configuration, scripts, CI logs, or deployment-related changes are shown that would demonstrate a successful rebuild/redeploy or a fix for the deployment error.",
+      "evidence": [
+        "frontend/public/deploy-marker.txt",
+        "project_state.json"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added a dedicated Payment Failure/Cancelled page and route (/payment-failure) with retry and dashboard navigation.",
-      "reason": "The BuildRequest requirements focus on restoring product routes, end-to-end checkout, real Stripe payment, verification, and an order confirmation page. A payment-failure page/route is not requested explicitly in REQ-1..REQ-6.",
+      "description": "Modified backend canister code (backend/main.mo) despite the request being solely to replace frontend fallback sample images and rebuild/redeploy.",
+      "reason": "BuildRequest does not ask for backend logic changes for this task; backend edits are unexpected and could violate the constraint to change backend only if required.",
       "evidence": [
-        "frontend/src/pages/PaymentFailurePage.tsx",
-        "frontend/src/App.tsx (paymentFailureRoute)"
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Added a deployment marker text file in the frontend public folder.",
+      "reason": "Not requested by the BuildRequest; it does not itself implement the image replacement requirement.",
+      "evidence": [
+        "frontend/public/deploy-marker.txt"
+      ]
+    },
+    {
+      "description": "Modified project metadata/state tracking (project_state.json) and a large frontend file summaries text file.",
+      "reason": "Not requested as part of image replacement or rebuild/redeploy requirements.",
+      "evidence": [
+        "project_state.json",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.72,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/ProductAddToCartSection.tsx",
-    "frontend/src/hooks/useCreateCheckoutSession.ts",
-    "frontend/src/hooks/useStripeConfiguration.ts",
-    "frontend/src/hooks/useStripeVerification.ts",
-    "frontend/src/pages/BusinessCardPage.tsx",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/LogoDesignPage.tsx",
-    "frontend/src/pages/OrderConfirmationPage.tsx",
-    "frontend/src/pages/PaymentFailurePage.tsx",
-    "frontend/src/pages/PaymentPage.tsx",
-    "frontend/src/pages/PaymentSuccessPage.tsx",
-    "frontend/src/pages/PhotoFramePage.tsx",
-    "frontend/src/pages/ProductBannerPage.tsx",
-    "frontend/src/utils/stripeOrderMapping.ts",
-    "frontend/src/utils/urlParams.ts",
+    "frontend/public/deploy-marker.txt",
     "project_state.json"
   ]
 }

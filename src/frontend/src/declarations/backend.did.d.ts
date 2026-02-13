@@ -48,6 +48,7 @@ export interface ExpandedOrder {
   'price' : string,
   'product' : string,
 }
+export type ExternalBlob = Uint8Array;
 export type Gender = { 'other' : null } |
   { 'female' : null } |
   { 'male' : null };
@@ -71,6 +72,20 @@ export type PaymentStatus = { 'verified' : null } |
   { 'paidSubmitted' : null } |
   { 'confirmed' : null } |
   { 'failed' : null };
+export interface ProductBannerSample {
+  'file' : ExternalBlob,
+  'description' : string,
+}
+export interface ProductBannerSampleUpdate {
+  'sample' : [] | [ProductBannerSample],
+  'position' : bigint,
+}
+export interface ProductBanners {
+  'sample1' : [] | [ProductBannerSample],
+  'sample2' : [] | [ProductBannerSample],
+  'sample3' : [] | [ProductBannerSample],
+  'sample4' : [] | [ProductBannerSample],
+}
 export interface Sample {
   'description' : string,
   'sampleName' : string,
@@ -125,6 +140,17 @@ export interface UserProfile {
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface http_header { 'value' : string, 'name' : string }
 export interface http_request_result {
   'status' : bigint,
@@ -132,6 +158,21 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addSample' : ActorMethod<[string, string, string, string], undefined>,
   'addService' : ActorMethod<[string, bigint, string], bigint>,
@@ -153,6 +194,7 @@ export interface _SERVICE {
   'getConfirmationMessageTemplate' : ActorMethod<[], string>,
   'getCustomerOrders' : ActorMethod<[string], Array<ExpandedOrder>>,
   'getOrdersByStatus' : ActorMethod<[OrderStatus], Array<ExpandedOrder>>,
+  'getProductBannerSamples' : ActorMethod<[], ProductBanners>,
   'getSamples' : ActorMethod<[], Array<Sample>>,
   'getServices' : ActorMethod<[], Array<Service>>,
   'getStripeSessionStatus' : ActorMethod<[string], StripeSessionStatus>,
@@ -171,6 +213,10 @@ export interface _SERVICE {
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateOrderPaymentStatus' : ActorMethod<[bigint, PaymentStatus], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
+  'updateProductBannerSamples' : ActorMethod<
+    [Array<ProductBannerSampleUpdate>],
+    undefined
+  >,
   'verifyPaymentAndConfirmOrder' : ActorMethod<[bigint], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

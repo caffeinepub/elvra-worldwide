@@ -1,127 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T12:40:58.821Z",
+  "generatedAt": "2026-02-13T14:34:01.700Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 5,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the 'Explore Our Work' product grid so that clicking a product navigates to an existing product detail route instead of a missing route (currently the product grid navigates to '/business-card', '/logo-design', '/product-banner', '/photo-frame' but the router defines '/products/business-card', '/products/logo-design', '/products/product-banner', '/products/photo-frame').",
+        "summary": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample4.dim_1200x800.jpg"
         ],
         "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx"
+          "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
+          "frontend/public/assets/generated/sample4.dim_1200x800.jpg"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Restore the end-to-end purchase flow for each product to match the previous behavior: product detail (including sample selection) → add to cart → customer form submission → payment step → thank you/order confirmed experience → 'Track My Order' for the created order.",
+        "summary": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ProductAddToCartSection.tsx",
-          "frontend/src/pages/PaymentPage.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/pages/OrderConfirmationPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/public/deploy-marker.txt"
         ],
         "matchedFiles": [
-          "frontend/src/components/ProductAddToCartSection.tsx",
-          "frontend/src/pages/PaymentPage.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/pages/OrderConfirmationPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Replace the current demo payment behavior on the Payment page with real Stripe payment initiation so users can complete an actual payment for the order (no fake/simulated payment).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useCreateCheckoutSession.ts",
-          "frontend/src/utils/stripeOrderMapping.ts",
-          "frontend/src/pages/PaymentPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useCreateCheckoutSession.ts",
-          "frontend/src/utils/stripeOrderMapping.ts",
-          "frontend/src/pages/PaymentPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the post-payment success experience so it reflects real Stripe payment completion: only show 'payment received/confirmed' messaging after Stripe verification succeeds, then transition the order into the correct paid/confirmed state and keep the 'Explore Home' and 'Track My Order' actions working.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/utils/urlParams.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/PaymentSuccessPage.tsx",
-          "frontend/src/utils/urlParams.ts"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Create and wire an explicit Order Confirmation page (currently empty) into the router and checkout flow, so that the user has a dedicated thank-you/order-confirmed screen reachable only after completing the payment step.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/OrderConfirmationPage.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/OrderConfirmationPage.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/pages/PaymentSuccessPage.tsx"
+          "frontend/public/deploy-marker.txt"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/http-outcalls/outcall.mo",
     "backend/main.mo",
-    "backend/migration.mo",
-    "backend/stripe/stripe.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/ProductAddToCartSection.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useCreateCheckoutSession.ts",
-    "frontend/src/hooks/useStripeConfiguration.ts",
-    "frontend/src/hooks/useStripeVerification.ts",
-    "frontend/src/pages/BusinessCardPage.tsx",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/LogoDesignPage.tsx",
-    "frontend/src/pages/OrderConfirmationPage.tsx",
-    "frontend/src/pages/PaymentFailurePage.tsx",
-    "frontend/src/pages/PaymentPage.tsx",
-    "frontend/src/pages/PaymentSuccessPage.tsx",
-    "frontend/src/pages/PhotoFramePage.tsx",
-    "frontend/src/pages/ProductBannerPage.tsx",
-    "frontend/src/utils/stripeOrderMapping.ts",
-    "frontend/src/utils/urlParams.ts",
+    "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
+    "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
+    "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
+    "frontend/public/assets/generated/sample4.dim_1200x800.jpg",
+    "frontend/public/deploy-marker.txt",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

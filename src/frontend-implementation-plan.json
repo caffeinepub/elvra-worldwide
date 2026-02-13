@@ -1,128 +1,52 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Restore product routes and real Stripe checkout with order confirmation",
+  "title": "Replace Product Banner Sample 1–4 fallback images and ensure updated build output",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix Home page product grid navigation to match existing /products/* routes.",
+      "summary": "Overwrite the four static fallback Product Banner sample images (Sample 1–4) so the sample selector displays the newly provided designs when backend samples are missing.",
       "acceptanceCriteria": [
-        "From the Home page 'Explore Our Work' section, clicking each product opens its corresponding product page without showing a Not Found screen.",
-        "The product navigation URLs match the routes registered in frontend/src/App.tsx."
+        "The following public URLs still exist and return images, but now display the newly provided designs: `/assets/generated/sample1.dim_1200x800.jpg`, `/assets/generated/sample2.dim_1200x800.jpg`, `/assets/generated/sample3.dim_1200x800.jpg`, `/assets/generated/sample4.dim_1200x800.jpg`.",
+        "The four new images are applied in sequence using the first four uploaded files in the upload order: (1) `Screenshot_20260213-192911 (1).png` → Sample 1, (2) `Screenshot_20260213-192903 (1).png` → Sample 2, (3) `Screenshot_20260213-192858 (1).png` → Sample 3, (4) `Screenshot_20260213-192911 (1)-1.png` → Sample 4.",
+        "Old sample images are no longer present in the repository under those sample1–sample4 filenames (they are overwritten/replaced).",
+        "On the Dashboard ordering flow sample selector (`frontend/src/components/ProductSampleSelector.tsx`), selecting Sample 1–4 shows the replaced images (via fallbackUrl when backend samples are null)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
           "operation": "modify",
-          "description": "Update the 'Explore Our Work' products list to navigate to the existing registered routes (/products/business-card, /products/logo-design, /products/product-banner, /products/photo-frame) instead of the missing legacy paths."
+          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192911 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+        },
+        {
+          "path": "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
+          "operation": "modify",
+          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192903 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+        },
+        {
+          "path": "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
+          "operation": "modify",
+          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192858 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+        },
+        {
+          "path": "frontend/public/assets/generated/sample4.dim_1200x800.jpg",
+          "operation": "modify",
+          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192911 (1)-1.png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Restore end-to-end checkout routing and state handoff across product detail → cart submission → payment → confirmation → track order.",
+      "summary": "Ensure the frontend build output updates cleanly after image replacement so the draft/preview reflects the new Sample 1–4 assets.",
       "acceptanceCriteria": [
-        "After submitting an order via the product add-to-cart/customer form flow, the app routes the user to /payment/$orderId for the newly created order.",
-        "After successful payment completion, the user sees a thank-you / order-confirmed screen with an actionable 'Track My Order' button that routes to /track-order/$orderId.",
-        "The Track Order page loads the correct order and does not show 'not found' for a valid orderId owned by the caller."
+        "Build completes successfully without errors.",
+        "Deployment completes successfully and the updated draft/preview app reflects the new Sample 1–4 images in the Product Banner sample selector."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ProductAddToCartSection.tsx",
-          "operation": "modify",
-          "description": "Confirm the restored flow remains intact: keep navigation to /payment/$orderId only when a non-zero orderId is returned; improve English error handling for invalid orderId and failed cart submission."
-        },
-        {
-          "path": "frontend/src/pages/PaymentPage.tsx",
-          "operation": "modify",
-          "description": "Ensure the payment step is the next page after order creation and that it uses the loaded order data to construct the checkout request and handle missing/unauthorized orders with a safe English error state (no Not Found navigation)."
-        },
-        {
-          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
-          "operation": "modify",
-          "description": "After Stripe success handling and verification, route the user into the dedicated order confirmation experience (e.g., /order-confirmation/$orderId), and ensure 'Track My Order' continues to navigate to /track-order/$orderId."
-        },
-        {
-          "path": "frontend/src/pages/OrderConfirmationPage.tsx",
-          "operation": "modify",
-          "description": "Implement the dedicated confirmation UI and actions (Track My Order, Explore Home) and ensure it is used by the checkout flow after successful payment completion."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the order confirmation page into TanStack Router (add a protected route like /order-confirmation/$orderId) and ensure navigation paths used by the flow are registered."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Replace demo payment on the Payment page with real Stripe Checkout initiation via backend-assisted session creation (no frontend secret keys).",
-      "acceptanceCriteria": [
-        "The Payment page no longer labels the flow as a demo and no longer navigates directly to /payment-success/$orderId without completing Stripe payment.",
-        "Clicking the payment CTA initiates a real Stripe payment flow (e.g., redirect to Stripe Checkout or confirm a PaymentIntent) using credentials that are not exposed as a Stripe secret key in the frontend bundle.",
-        "After Stripe indicates success, the app returns to the app and associates the successful payment with the correct orderId."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useCreateCheckoutSession.ts",
+          "path": "frontend/public/deploy-marker.txt",
           "operation": "create",
-          "description": "Create a React Query mutation hook that calls the backend capability createCheckoutSession(items, successUrl, cancelUrl), JSON-parses the response, validates that a non-empty Stripe Checkout URL exists, and returns it for redirect. Use the selected 'stripe' component approach for Stripe Checkout session creation; Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/stripeOrderMapping.ts",
-          "operation": "create",
-          "description": "Add a helper to map an in-app order into Stripe ShoppingItem[] with validated amount (in cents) and descriptions. If the order amount cannot be derived safely, return an error state so the UI blocks checkout rather than initiating an incorrect charge."
-        },
-        {
-          "path": "frontend/src/pages/PaymentPage.tsx",
-          "operation": "modify",
-          "description": "Remove demo language and demo navigation. Use the useCreateCheckoutSession hook to initiate a real Stripe Checkout session and redirect via window.location.href (not router navigation). Build successUrl/cancelUrl so the app can associate the Stripe return with the correct orderId, and display an English error state if Stripe is not configured, the session response is invalid, or pricing cannot be determined. Use the selected 'stripe' component patterns for redirect-based checkout; Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Update post-payment success so it only confirms payment after Stripe verification succeeds, then enables Track/Home actions.",
-      "acceptanceCriteria": [
-        "The success page does not mark payment as received unless Stripe verification for the payment succeeds.",
-        "On successful verification, the order's paymentStatus is updated to the appropriate paid/verified/confirmed state consistent with backend rules.",
-        "The success UI includes working navigation to Home and to /track-order/$orderId."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
-          "operation": "modify",
-          "description": "Replace the current optimistic 'paidSubmitted' update with a real Stripe-success handling flow: extract the Stripe session identifier from the return URL, call backend capability getStripeSessionStatus(sessionId), and only when Stripe indicates completion call backend capability verifyPaymentAndConfirmOrder(orderId). Show English loading/error states, never claim payment received unless verification succeeds, and keep 'Explore Home' and 'Track My Order' actions working after verification. Use the selected 'stripe' component guidance for success handling and Stripe status checks; Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/urlParams.ts",
-          "operation": "modify",
-          "description": "Extend or reuse existing URL parsing helpers to reliably read Stripe return parameters (e.g., session_id) from query string and/or hash contexts without introducing non-English messaging."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Implement and wire an Order Confirmation page with guarded access so it’s only reachable after successful payment completion.",
-      "acceptanceCriteria": [
-        "frontend/src/pages/OrderConfirmationPage.tsx contains a real UI (not empty) that summarizes confirmation and provides 'Track My Order' and 'Explore Home' actions in English.",
-        "A route exists for the order confirmation page and it is only reachable after successful payment completion (direct navigation without completing payment results in a safe redirect or an informative error state)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/OrderConfirmationPage.tsx",
-          "operation": "modify",
-          "description": "Implement a complete English order-confirmed UI that reads the orderId from route params, summarizes the confirmation state, and provides actions for 'Track My Order' (/track-order/$orderId) and 'Explore Home' (/). Add a guarded entry check (e.g., via sessionStorage flag set after successful Stripe verification) so direct navigation shows an informative error state or safely redirects to /payment/$orderId or /dashboard."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Add and register a protected TanStack Router route for the Order Confirmation page (e.g., /order-confirmation/$orderId wrapped in AuthGate), and ensure it is included in the route tree so it is navigable after payment verification."
-        },
-        {
-          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
-          "operation": "modify",
-          "description": "After successful Stripe verification, persist a short-lived 'payment completed' marker for the orderId (e.g., in sessionStorage) and navigate to the new order confirmation route so this page is the dedicated thank-you screen."
+          "description": "Add a small deploy marker file (e.g., with a timestamp and note about Sample 1–4 image replacement) to help confirm the latest frontend build artifacts were produced and deployed."
         }
       ]
     }
