@@ -14,7 +14,9 @@ import PricingPage from './pages/PricingPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
-import DashboardPage from './pages/DashboardPage';
+import OrderFormPage from './pages/OrderFormPage';
+import MyOrdersPage from './pages/MyOrdersPage';
+import HelpPage from './pages/HelpPage';
 import BusinessCardPage from './pages/BusinessCardPage';
 import LogoDesignPage from './pages/LogoDesignPage';
 import ProductBannerPage from './pages/ProductBannerPage';
@@ -78,12 +80,32 @@ const signupRoute = createRoute({
   component: SignUpPage,
 });
 
-const dashboardRoute = createRoute({
+const orderFormRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/dashboard',
+  path: '/order',
   component: () => (
     <AuthGate>
-      <DashboardPage />
+      <OrderFormPage />
+    </AuthGate>
+  ),
+});
+
+const myOrdersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/my-orders',
+  component: () => (
+    <AuthGate>
+      <MyOrdersPage />
+    </AuthGate>
+  ),
+});
+
+const helpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/help',
+  component: () => (
+    <AuthGate>
+      <HelpPage />
     </AuthGate>
   ),
 });
@@ -169,7 +191,9 @@ const routeTree = rootRoute.addChildren([
   contactRoute,
   loginRoute,
   signupRoute,
-  dashboardRoute,
+  orderFormRoute,
+  myOrdersRoute,
+  helpRoute,
   businessCardRoute,
   logoDesignRoute,
   productBannerRoute,

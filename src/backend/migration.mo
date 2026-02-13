@@ -1,127 +1,58 @@
-import Map "mo:core/Map";
-import List "mo:core/List";
-import Principal "mo:core/Principal";
-import Time "mo:core/Time";
+import Array "mo:core/Array";
+import Storage "blob-storage/Storage";
 
 module {
-  type Service = {
-    id : Nat;
-    name : Text;
-    priceUSD : Nat;
-    deliveryTime : Text;
+  public type OldShowcaseSamples = {
+    sample1 : ?ShowcaseSample;
+    sample2 : ?ShowcaseSample;
+    sample3 : ?ShowcaseSample;
+    sample4 : ?ShowcaseSample;
   };
 
-  type SupportRequest = {
-    timestamp : Time.Time;
-    name : Text;
-    email : Text;
-    message : Text;
+  public type OldActor = {
+    bannerSamples : OldShowcaseSamples;
   };
 
-  type Gender = { #male; #female; #other };
-
-  type UserProfile = {
-    fullName : Text;
-    email : Text;
-    mobileNumber : Text;
-    dob : Text;
-    gender : Gender;
-    isVerified : Bool;
-  };
-
-  type Sample = {
-    sampleName : Text;
+  public type ShowcaseSample = {
+    file : Storage.ExternalBlob;
     description : Text;
-    price : Text;
-    concentration : Text;
   };
 
-  type ExpandedOrder = {
-    id : Nat;
-    owner : Principal.Principal;
-    name : Text;
-    email : Text;
-    phone : Text;
-    dob : Text;
-    gender : Gender;
-    product : Text;
-    sampleSelected : Text;
-    brandName : Text;
-    description : Text;
-    price : Text;
-    deliveryTime : Text;
-    orderStatus : OrderStatus;
-    paymentStatus : PaymentStatus;
-    timestamp : Time.Time;
+  public type NewShowcaseSamples = {
+    samples : [?ShowcaseSample];
   };
 
-  type OrderStatus = {
-    #pending;
-    #confirmed;
-    #shipped;
-    #delivered;
-    #cancelled;
+  public type NewAllShowcaseSamples = {
+    businessCard : NewShowcaseSamples;
+    logoDesign : NewShowcaseSamples;
+    productBanner : NewShowcaseSamples;
+    photoFrame : NewShowcaseSamples;
   };
 
-  type PaymentStatus = {
-    #pending;
-    #paidSubmitted;
-    #verified;
-    #confirmed;
-    #failed;
-  };
-
-  type NotificationRequest = {
-    name : Text;
-    email : Text;
-    phone : Text;
-    product : Text;
-    sample : Text;
-    brandName : Text;
-    description : Text;
-    timestamp : Time.Time;
-  };
-
-  type ConfirmationEmailRequest = {
-    customerEmail : Text;
-    confirmationMessageTemplate : Text;
-    orderId : Nat;
-    timestamp : Time.Time;
-  };
-
-  type OldActor = {
-    services : Map.Map<Nat, Service>;
-    supportRequests : Map.Map<Principal.Principal, List.List<SupportRequest>>;
-    userProfiles : Map.Map<Principal.Principal, UserProfile>;
-    samples : Map.Map<Text, Sample>;
-    expandedOrders : Map.Map<Nat, ExpandedOrder>;
-    notificationRequests : Map.Map<Nat, NotificationRequest>;
-    confirmationEmailRequests : Map.Map<Nat, ConfirmationEmailRequest>;
-    nextServiceId : Nat;
-    nextOrderId : Nat;
-    nextNotificationId : Nat;
-    nextConfirmationEmailRequestId : Nat;
-  };
-
-  type NewActor = {
-    services : Map.Map<Nat, Service>;
-    supportRequests : Map.Map<Principal.Principal, List.List<SupportRequest>>;
-    userProfiles : Map.Map<Principal.Principal, UserProfile>;
-    samples : Map.Map<Text, Sample>;
-    expandedOrders : Map.Map<Nat, ExpandedOrder>;
-    notificationRequests : Map.Map<Nat, NotificationRequest>;
-    confirmationEmailRequests : Map.Map<Nat, ConfirmationEmailRequest>;
-    nextServiceId : Nat;
-    nextOrderId : Nat;
-    nextNotificationId : Nat;
-    nextConfirmationEmailRequestId : Nat;
-    stripeConfiguration : ?{ secretKey : Text; allowedCountries : [Text] };
+  public type NewActor = {
+    showcaseSamples : NewAllShowcaseSamples;
   };
 
   public func run(old : OldActor) : NewActor {
+    let convertSamples = func(samples : OldShowcaseSamples) : NewShowcaseSamples {
+      let newSamples = Array.tabulate(
+        12,
+        func(i) {
+          if (i == 0) { samples.sample1 } else if (i == 1) { samples.sample2 } else if (i == 2) {
+            samples.sample3;
+          } else if (i == 3) { samples.sample4 } else { null };
+        },
+      );
+      { samples = newSamples };
+    };
+
     {
-      old with
-      stripeConfiguration = null;
+      showcaseSamples = {
+        businessCard = { samples = Array.tabulate(12, func(i) { null }) };
+        logoDesign = { samples = Array.tabulate(12, func(i) { null }) };
+        productBanner = convertSamples(old.bannerSamples);
+        photoFrame = { samples = Array.tabulate(12, func(i) { null }) };
+      };
     };
   };
 };

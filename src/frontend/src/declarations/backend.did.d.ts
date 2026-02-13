@@ -23,6 +23,12 @@ export interface AddToCartInput {
   'price' : string,
   'product' : string,
 }
+export interface AllShowcaseSamples {
+  'logoDesign' : ShowcaseSamples,
+  'businessCard' : ShowcaseSamples,
+  'photoFrame' : ShowcaseSamples,
+  'productBanner' : ShowcaseSamples,
+}
 export interface BasicProfile { 'fullName' : string, 'email' : string }
 export interface ConfirmationEmailRequest {
   'confirmationMessageTemplate' : string,
@@ -72,20 +78,6 @@ export type PaymentStatus = { 'verified' : null } |
   { 'paidSubmitted' : null } |
   { 'confirmed' : null } |
   { 'failed' : null };
-export interface ProductBannerSample {
-  'file' : ExternalBlob,
-  'description' : string,
-}
-export interface ProductBannerSampleUpdate {
-  'sample' : [] | [ProductBannerSample],
-  'position' : bigint,
-}
-export interface ProductBanners {
-  'sample1' : [] | [ProductBannerSample],
-  'sample2' : [] | [ProductBannerSample],
-  'sample3' : [] | [ProductBannerSample],
-  'sample4' : [] | [ProductBannerSample],
-}
 export interface Sample {
   'description' : string,
   'sampleName' : string,
@@ -105,6 +97,19 @@ export interface ShoppingItem {
   'priceInCents' : bigint,
   'productDescription' : string,
 }
+export type ShowcaseCategory = { 'logoDesign' : null } |
+  { 'businessCard' : null } |
+  { 'photoFrame' : null } |
+  { 'productBanner' : null };
+export interface ShowcaseSample {
+  'file' : ExternalBlob,
+  'description' : string,
+}
+export interface ShowcaseSampleUpdate {
+  'sample' : [] | [ShowcaseSample],
+  'position' : bigint,
+}
+export interface ShowcaseSamples { 'samples' : Array<[] | [ShowcaseSample]> }
 export interface StripeConfiguration {
   'allowedCountries' : Array<string>,
   'secretKey' : string,
@@ -178,6 +183,7 @@ export interface _SERVICE {
   'addService' : ActorMethod<[string, bigint, string], bigint>,
   'addToCart' : ActorMethod<[AddToCartInput], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'cancelOrder' : ActorMethod<[bigint], undefined>,
   'createCheckoutSession' : ActorMethod<
     [Array<ShoppingItem>, string, string],
     string
@@ -188,13 +194,17 @@ export interface _SERVICE {
     Array<ConfirmationEmailRequest>
   >,
   'getAllNotificationRequests' : ActorMethod<[], Array<NotificationRequest>>,
+  'getAllShowcaseSamples' : ActorMethod<[], AllShowcaseSamples>,
   'getCallerOrders' : ActorMethod<[], Array<ExpandedOrder>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getCategoryShowcaseSamples' : ActorMethod<
+    [ShowcaseCategory],
+    ShowcaseSamples
+  >,
   'getConfirmationMessageTemplate' : ActorMethod<[], string>,
   'getCustomerOrders' : ActorMethod<[string], Array<ExpandedOrder>>,
   'getOrdersByStatus' : ActorMethod<[OrderStatus], Array<ExpandedOrder>>,
-  'getProductBannerSamples' : ActorMethod<[], ProductBanners>,
   'getSamples' : ActorMethod<[], Array<Sample>>,
   'getServices' : ActorMethod<[], Array<Service>>,
   'getStripeSessionStatus' : ActorMethod<[string], StripeSessionStatus>,
@@ -213,8 +223,8 @@ export interface _SERVICE {
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateOrderPaymentStatus' : ActorMethod<[bigint, PaymentStatus], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
-  'updateProductBannerSamples' : ActorMethod<
-    [Array<ProductBannerSampleUpdate>],
+  'updateShowcaseSamples' : ActorMethod<
+    [ShowcaseCategory, Array<ShowcaseSampleUpdate>],
     undefined
   >,
   'verifyPaymentAndConfirmOrder' : ActorMethod<[bigint], undefined>,

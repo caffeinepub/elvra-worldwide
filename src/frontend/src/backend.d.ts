@@ -14,9 +14,13 @@ export class ExternalBlob {
     static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
     withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
 }
-export interface ProductBannerSample {
-    file: ExternalBlob;
-    description: string;
+export interface UserProfile {
+    dob: string;
+    fullName: string;
+    mobileNumber: string;
+    email: string;
+    isVerified: boolean;
+    gender: Gender;
 }
 export interface TransformationOutput {
     status: bigint;
@@ -46,11 +50,11 @@ export interface BasicProfile {
     fullName: string;
     email: string;
 }
-export interface ProductBanners {
-    sample1?: ProductBannerSample;
-    sample2?: ProductBannerSample;
-    sample3?: ProductBannerSample;
-    sample4?: ProductBannerSample;
+export interface AllShowcaseSamples {
+    logoDesign: ShowcaseSamples;
+    businessCard: ShowcaseSamples;
+    photoFrame: ShowcaseSamples;
+    productBanner: ShowcaseSamples;
 }
 export interface TransformationInput {
     context: Uint8Array;
@@ -61,10 +65,6 @@ export interface ConfirmationEmailRequest {
     orderId: bigint;
     timestamp: Time;
     customerEmail: string;
-}
-export interface ProductBannerSampleUpdate {
-    sample?: ProductBannerSample;
-    position: bigint;
 }
 export type StripeSessionStatus = {
     __kind__: "completed";
@@ -81,6 +81,9 @@ export type StripeSessionStatus = {
 export interface StripeConfiguration {
     allowedCountries: Array<string>;
     secretKey: string;
+}
+export interface ShowcaseSamples {
+    samples: Array<ShowcaseSample | null>;
 }
 export interface Service {
     id: bigint;
@@ -139,13 +142,13 @@ export interface SupportRequest {
     message: string;
     timestamp: Time;
 }
-export interface UserProfile {
-    dob: string;
-    fullName: string;
-    mobileNumber: string;
-    email: string;
-    isVerified: boolean;
-    gender: Gender;
+export interface ShowcaseSample {
+    file: ExternalBlob;
+    description: string;
+}
+export interface ShowcaseSampleUpdate {
+    sample?: ShowcaseSample;
+    position: bigint;
 }
 export enum Gender {
     other = "other",
@@ -166,6 +169,12 @@ export enum PaymentStatus {
     confirmed = "confirmed",
     failed = "failed"
 }
+export enum ShowcaseCategory {
+    logoDesign = "logoDesign",
+    businessCard = "businessCard",
+    photoFrame = "photoFrame",
+    productBanner = "productBanner"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -176,17 +185,19 @@ export interface backendInterface {
     addService(name: string, priceUSD: bigint, deliveryTime: string): Promise<bigint>;
     addToCart(input: AddToCartInput): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    cancelOrder(orderId: bigint): Promise<void>;
     createCheckoutSession(items: Array<ShoppingItem>, successUrl: string, cancelUrl: string): Promise<string>;
     deleteNotificationRequest(id: bigint): Promise<void>;
     getAllConfirmationEmailRequests(): Promise<Array<ConfirmationEmailRequest>>;
     getAllNotificationRequests(): Promise<Array<NotificationRequest>>;
+    getAllShowcaseSamples(): Promise<AllShowcaseSamples>;
     getCallerOrders(): Promise<Array<ExpandedOrder>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getCategoryShowcaseSamples(category: ShowcaseCategory): Promise<ShowcaseSamples>;
     getConfirmationMessageTemplate(): Promise<string>;
     getCustomerOrders(customerName: string): Promise<Array<ExpandedOrder>>;
     getOrdersByStatus(status: OrderStatus): Promise<Array<ExpandedOrder>>;
-    getProductBannerSamples(): Promise<ProductBanners>;
     getSamples(): Promise<Array<Sample>>;
     getServices(): Promise<Array<Service>>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
@@ -202,6 +213,6 @@ export interface backendInterface {
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateOrderPaymentStatus(orderId: bigint, status: PaymentStatus): Promise<void>;
     updateOrderStatus(orderId: bigint, status: OrderStatus): Promise<void>;
-    updateProductBannerSamples(updates: Array<ProductBannerSampleUpdate>): Promise<void>;
+    updateShowcaseSamples(category: ShowcaseCategory, updates: Array<ShowcaseSampleUpdate>): Promise<void>;
     verifyPaymentAndConfirmOrder(orderId: bigint): Promise<void>;
 }

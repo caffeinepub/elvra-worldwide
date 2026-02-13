@@ -58,71 +58,53 @@ export default function PaymentSuccessPage() {
             });
           }, 2000);
         } else if (sessionStatus.__kind__ === 'failed') {
-          setErrorMessage(sessionStatus.failed.error || 'Payment verification failed');
-          setVerificationState('error');
-        } else {
-          setErrorMessage('Payment status could not be verified');
+          setErrorMessage(sessionStatus.failed.error || 'Payment verification failed. Please contact support.');
           setVerificationState('error');
         }
       } catch (error: any) {
         console.error('Payment verification error:', error);
-        setErrorMessage(error.message || 'Failed to verify payment. Please contact support.');
+        setErrorMessage(error.message || 'An error occurred during payment verification. Please contact support.');
         setVerificationState('error');
       }
     };
 
     verifyStripePayment();
-  }, []);
+  }, [getSessionStatus, verifyPayment, navigate]);
 
   if (verificationState === 'checking') {
     return (
       <div className="min-h-screen py-16 md:py-24 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-lg text-muted-foreground">Verifying your payment...</p>
-          <p className="text-sm text-muted-foreground">Please wait while we confirm your transaction</p>
-        </div>
+        <Card className="shadow-luxury max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Verifying Payment</h2>
+              <p className="text-muted-foreground">
+                Please wait while we confirm your payment with Stripe...
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (verificationState === 'error') {
+  if (verificationState === 'success') {
     return (
-      <div className="min-h-screen py-16 md:py-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Payment Verification Failed</AlertTitle>
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
-
-          <Card className="shadow-luxury">
-            <CardHeader>
-              <CardTitle>What to do next?</CardTitle>
-              <CardDescription>
-                If you believe this is an error, please contact our support team with your order details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                onClick={() => navigate({ to: '/dashboard' })}
-                className="w-full"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                Return to Dashboard
-              </Button>
-              {orderId && (
-                <Button
-                  onClick={() => navigate({ to: '/payment/$orderId', params: { orderId } })}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Try Payment Again
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen py-16 md:py-24 flex items-center justify-center">
+        <Card className="shadow-luxury max-w-md w-full border-green-500/20">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle2 className="h-10 w-10 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">Payment Successful!</h2>
+              <p className="text-muted-foreground">
+                Redirecting you to your order confirmation...
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -130,21 +112,40 @@ export default function PaymentSuccessPage() {
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
-        <Card className="shadow-luxury border-green-500/20">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
-            </div>
-            <CardTitle className="text-3xl">Payment Verified!</CardTitle>
-            <CardDescription className="text-base">
-              Your payment has been successfully verified and your order is confirmed.
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Payment Verification Failed</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+
+        <Card className="shadow-luxury">
+          <CardHeader>
+            <CardTitle>What should I do?</CardTitle>
+            <CardDescription>
+              If you believe this is an error, please contact our support team with your order details.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
-              Redirecting you to order confirmation...
-            </p>
-            <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+          <CardContent className="space-y-3">
+            {orderId && (
+              <Button
+                onClick={() => navigate({ to: '/track-order/$orderId', params: { orderId } })}
+                className="w-full"
+                size="lg"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                View Order Details
+              </Button>
+            )}
+            
+            <Button
+              onClick={() => navigate({ to: '/my-orders' })}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Return to My Orders
+            </Button>
           </CardContent>
         </Card>
       </div>

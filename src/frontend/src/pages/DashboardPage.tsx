@@ -7,7 +7,7 @@ import { useAddToCart, useGetCallerOrders } from '../hooks/useAddToCart';
 import { useIsCallerAdmin, useVerifyPaymentAndConfirmOrder } from '../hooks/useAdminOrderVerification';
 import ServiceCard from '../components/ServiceCard';
 import AdminGate from '../components/AdminGate';
-import ProductBannerSamplesAdminPanel from '../components/admin/ProductBannerSamplesAdminPanel';
+import ExploreWorkSamplesAdminPanel from '../components/admin/ExploreWorkSamplesAdminPanel';
 import { Package, MessageSquare, User, ShoppingCart, Truck, CheckCircle2, Clock, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,7 +194,7 @@ export default function DashboardPage() {
               <CardDescription>Administrative tools and settings</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
-              <ProductBannerSamplesAdminPanel />
+              <ExploreWorkSamplesAdminPanel />
               
               <Separator />
 
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                 })}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No orders yet</p>
+              <p className="text-muted-foreground text-center py-8">No orders yet</p>
             )}
           </CardContent>
         </Card>
@@ -299,10 +299,10 @@ export default function DashboardPage() {
         <Card className="shadow-luxury">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" />
+              <Package className="h-5 w-5 text-primary" />
               <CardTitle>Available Services</CardTitle>
             </div>
-            <CardDescription>Browse and order our premium design services</CardDescription>
+            <CardDescription>Browse our premium design services</CardDescription>
           </CardHeader>
           <CardContent>
             {servicesLoading ? (
@@ -311,23 +311,21 @@ export default function DashboardPage() {
               </div>
             ) : services && services.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {services.map(service => {
+                {services.map((service) => {
                   const premiumService = getPremiumServiceByName(service.name);
-                  const icon = premiumService?.icon || '';
-                  const priceLabel = `$${service.priceUSD}`;
-                  
                   return (
                     <ServiceCard
                       key={service.id.toString()}
-                      icon={icon}
+                      icon={premiumService?.icon || ''}
                       name={service.name}
-                      priceLabel={priceLabel}
+                      priceLabel={`$${service.priceUSD}`}
                       deliveryTime={service.deliveryTime}
                       action={
                         <Button
                           onClick={() => handleServiceSelect(service)}
+                          variant="outline"
                           size="sm"
-                          className="w-full shadow-luxury"
+                          className="w-full"
                         >
                           Select Service
                         </Button>
@@ -337,146 +335,121 @@ export default function DashboardPage() {
                 })}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No services available</p>
+              <p className="text-muted-foreground text-center py-8">No services available</p>
             )}
           </CardContent>
         </Card>
 
-        {formData.product && (
-          <Card className="shadow-luxury">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                <CardTitle>Create Order</CardTitle>
-              </div>
-              <CardDescription>
-                Selected: {formData.product} • {formData.price} • {formData.deliveryTime}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="your@email.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="+1 234 567 8900"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth *</Label>
-                  <Input
-                    id="dob"
-                    type="date"
-                    value={formData.dob}
-                    onChange={(e) => handleInputChange('dob', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => handleInputChange('gender', value as Gender)}
-                  >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={Gender.male}>Male</SelectItem>
-                      <SelectItem value={Gender.female}>Female</SelectItem>
-                      <SelectItem value={Gender.other}>Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="sample">Sample Selection *</Label>
-                  <Select
-                    value={formData.selectedSample}
-                    onValueChange={(value) => handleInputChange('selectedSample', value)}
-                  >
-                    <SelectTrigger id="sample">
-                      <SelectValue placeholder="Select a sample" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sample1">Sample 1</SelectItem>
-                      <SelectItem value="sample2">Sample 2</SelectItem>
-                      <SelectItem value="sample3">Sample 3</SelectItem>
-                      <SelectItem value="sample4">Sample 4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
+        <Card className="shadow-luxury">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <CardTitle>Add to Cart</CardTitle>
+            </div>
+            <CardDescription>Fill in your details to place an order</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="brandName">Shop / Brand Name *</Label>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="your.email@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+1 234 567 8900"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of Birth</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  value={formData.dob}
+                  onChange={(e) => handleInputChange('dob', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value as Gender)}>
+                  <SelectTrigger id="gender">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={Gender.male}>Male</SelectItem>
+                    <SelectItem value={Gender.female}>Female</SelectItem>
+                    <SelectItem value={Gender.other}>Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sample">Sample Selection</Label>
+                <Input
+                  id="sample"
+                  value={formData.selectedSample}
+                  onChange={(e) => handleInputChange('selectedSample', e.target.value)}
+                  placeholder="e.g., sample1"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="brandName">Shop/Brand Name</Label>
                 <Input
                   id="brandName"
                   value={formData.brandName}
                   onChange={(e) => handleInputChange('brandName', e.target.value)}
-                  placeholder="Enter your Shop / Brand Name"
+                  placeholder="Enter your shop or brand name"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="description">Description</Label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe your requirements..."
-                  rows={5}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full min-h-[120px] px-3 py-2 border border-input rounded-md bg-background text-foreground resize-y"
                 />
-                <p className="text-sm text-muted-foreground text-right">{wordCount} / 1000 words</p>
+                <p className="text-sm text-muted-foreground">{wordCount} / 1000 words</p>
               </div>
-
-              <Button
-                onClick={handleAddToCart}
-                disabled={addToCartMutation.isPending}
-                size="lg"
-                className="w-full shadow-luxury"
-              >
-                {addToCartMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Creating Order...
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Add to Cart & Proceed
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+            <Button
+              onClick={handleAddToCart}
+              disabled={addToCartMutation.isPending}
+              size="lg"
+              className="w-full shadow-luxury"
+            >
+              {addToCartMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Adding to Cart...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="shadow-luxury">
           <CardHeader>
@@ -492,7 +465,7 @@ export default function DashboardPage() {
                 {supportRequests.map((request, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-2">
                     <div className="flex items-start justify-between">
-                      <p className="font-semibold">{request.name}</p>
+                      <p className="font-medium">{request.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(Number(request.timestamp) / 1000000).toLocaleDateString()}
                       </p>
@@ -503,7 +476,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No support requests</p>
+              <p className="text-muted-foreground text-center py-8">No support requests yet</p>
             )}
           </CardContent>
         </Card>
@@ -519,27 +492,31 @@ export default function DashboardPage() {
           <CardContent>
             {userProfile ? (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Full Name</p>
-                    <p className="font-medium">{userProfile.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{userProfile.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Mobile</p>
-                    <p className="font-medium">{userProfile.mobileNumber || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date of Birth</p>
-                    <p className="font-medium">{userProfile.dob || 'Not provided'}</p>
-                  </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Full Name:</span>
+                  <span className="font-medium">{userProfile.fullName}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Email:</span>
+                  <span className="font-medium">{userProfile.email}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Mobile:</span>
+                  <span className="font-medium">{userProfile.mobileNumber || 'Not provided'}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Date of Birth:</span>
+                  <span className="font-medium">{userProfile.dob || 'Not provided'}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-muted-foreground">Verified:</span>
+                  <Badge variant={userProfile.isVerified ? 'default' : 'outline'}>
+                    {userProfile.isVerified ? 'Verified' : 'Not Verified'}
+                  </Badge>
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No profile information</p>
+              <p className="text-muted-foreground text-center py-8">No profile information available</p>
             )}
           </CardContent>
         </Card>

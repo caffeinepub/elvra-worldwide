@@ -66,6 +66,20 @@ export const NotificationRequest = IDL.Record({
   'phone' : IDL.Text,
   'product' : IDL.Text,
 });
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const ShowcaseSample = IDL.Record({
+  'file' : ExternalBlob,
+  'description' : IDL.Text,
+});
+export const ShowcaseSamples = IDL.Record({
+  'samples' : IDL.Vec(IDL.Opt(ShowcaseSample)),
+});
+export const AllShowcaseSamples = IDL.Record({
+  'logoDesign' : ShowcaseSamples,
+  'businessCard' : ShowcaseSamples,
+  'photoFrame' : ShowcaseSamples,
+  'productBanner' : ShowcaseSamples,
+});
 export const PaymentStatus = IDL.Variant({
   'verified' : IDL.Null,
   'pending' : IDL.Null,
@@ -106,16 +120,11 @@ export const UserProfile = IDL.Record({
   'isVerified' : IDL.Bool,
   'gender' : Gender,
 });
-export const ExternalBlob = IDL.Vec(IDL.Nat8);
-export const ProductBannerSample = IDL.Record({
-  'file' : ExternalBlob,
-  'description' : IDL.Text,
-});
-export const ProductBanners = IDL.Record({
-  'sample1' : IDL.Opt(ProductBannerSample),
-  'sample2' : IDL.Opt(ProductBannerSample),
-  'sample3' : IDL.Opt(ProductBannerSample),
-  'sample4' : IDL.Opt(ProductBannerSample),
+export const ShowcaseCategory = IDL.Variant({
+  'logoDesign' : IDL.Null,
+  'businessCard' : IDL.Null,
+  'photoFrame' : IDL.Null,
+  'productBanner' : IDL.Null,
 });
 export const Sample = IDL.Record({
   'description' : IDL.Text,
@@ -168,8 +177,8 @@ export const TransformationOutput = IDL.Record({
   'body' : IDL.Vec(IDL.Nat8),
   'headers' : IDL.Vec(http_header),
 });
-export const ProductBannerSampleUpdate = IDL.Record({
-  'sample' : IDL.Opt(ProductBannerSample),
+export const ShowcaseSampleUpdate = IDL.Record({
+  'sample' : IDL.Opt(ShowcaseSample),
   'position' : IDL.Nat,
 });
 
@@ -205,6 +214,7 @@ export const idlService = IDL.Service({
   'addService' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Nat], []),
   'addToCart' : IDL.Func([AddToCartInput], [IDL.Nat], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'cancelOrder' : IDL.Func([IDL.Nat], [], []),
   'createCheckoutSession' : IDL.Func(
       [IDL.Vec(ShoppingItem), IDL.Text, IDL.Text],
       [IDL.Text],
@@ -221,9 +231,15 @@ export const idlService = IDL.Service({
       [IDL.Vec(NotificationRequest)],
       ['query'],
     ),
+  'getAllShowcaseSamples' : IDL.Func([], [AllShowcaseSamples], ['query']),
   'getCallerOrders' : IDL.Func([], [IDL.Vec(ExpandedOrder)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getCategoryShowcaseSamples' : IDL.Func(
+      [ShowcaseCategory],
+      [ShowcaseSamples],
+      ['query'],
+    ),
   'getConfirmationMessageTemplate' : IDL.Func([], [IDL.Text], ['query']),
   'getCustomerOrders' : IDL.Func(
       [IDL.Text],
@@ -235,7 +251,6 @@ export const idlService = IDL.Service({
       [IDL.Vec(ExpandedOrder)],
       ['query'],
     ),
-  'getProductBannerSamples' : IDL.Func([], [ProductBanners], ['query']),
   'getSamples' : IDL.Func([], [IDL.Vec(Sample)], ['query']),
   'getServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
   'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
@@ -263,8 +278,8 @@ export const idlService = IDL.Service({
     ),
   'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, PaymentStatus], [], []),
   'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
-  'updateProductBannerSamples' : IDL.Func(
-      [IDL.Vec(ProductBannerSampleUpdate)],
+  'updateShowcaseSamples' : IDL.Func(
+      [ShowcaseCategory, IDL.Vec(ShowcaseSampleUpdate)],
       [],
       [],
     ),
@@ -332,6 +347,20 @@ export const idlFactory = ({ IDL }) => {
     'phone' : IDL.Text,
     'product' : IDL.Text,
   });
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const ShowcaseSample = IDL.Record({
+    'file' : ExternalBlob,
+    'description' : IDL.Text,
+  });
+  const ShowcaseSamples = IDL.Record({
+    'samples' : IDL.Vec(IDL.Opt(ShowcaseSample)),
+  });
+  const AllShowcaseSamples = IDL.Record({
+    'logoDesign' : ShowcaseSamples,
+    'businessCard' : ShowcaseSamples,
+    'photoFrame' : ShowcaseSamples,
+    'productBanner' : ShowcaseSamples,
+  });
   const PaymentStatus = IDL.Variant({
     'verified' : IDL.Null,
     'pending' : IDL.Null,
@@ -372,16 +401,11 @@ export const idlFactory = ({ IDL }) => {
     'isVerified' : IDL.Bool,
     'gender' : Gender,
   });
-  const ExternalBlob = IDL.Vec(IDL.Nat8);
-  const ProductBannerSample = IDL.Record({
-    'file' : ExternalBlob,
-    'description' : IDL.Text,
-  });
-  const ProductBanners = IDL.Record({
-    'sample1' : IDL.Opt(ProductBannerSample),
-    'sample2' : IDL.Opt(ProductBannerSample),
-    'sample3' : IDL.Opt(ProductBannerSample),
-    'sample4' : IDL.Opt(ProductBannerSample),
+  const ShowcaseCategory = IDL.Variant({
+    'logoDesign' : IDL.Null,
+    'businessCard' : IDL.Null,
+    'photoFrame' : IDL.Null,
+    'productBanner' : IDL.Null,
   });
   const Sample = IDL.Record({
     'description' : IDL.Text,
@@ -431,8 +455,8 @@ export const idlFactory = ({ IDL }) => {
     'body' : IDL.Vec(IDL.Nat8),
     'headers' : IDL.Vec(http_header),
   });
-  const ProductBannerSampleUpdate = IDL.Record({
-    'sample' : IDL.Opt(ProductBannerSample),
+  const ShowcaseSampleUpdate = IDL.Record({
+    'sample' : IDL.Opt(ShowcaseSample),
     'position' : IDL.Nat,
   });
   
@@ -468,6 +492,7 @@ export const idlFactory = ({ IDL }) => {
     'addService' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Nat], []),
     'addToCart' : IDL.Func([AddToCartInput], [IDL.Nat], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'cancelOrder' : IDL.Func([IDL.Nat], [], []),
     'createCheckoutSession' : IDL.Func(
         [IDL.Vec(ShoppingItem), IDL.Text, IDL.Text],
         [IDL.Text],
@@ -484,9 +509,15 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(NotificationRequest)],
         ['query'],
       ),
+    'getAllShowcaseSamples' : IDL.Func([], [AllShowcaseSamples], ['query']),
     'getCallerOrders' : IDL.Func([], [IDL.Vec(ExpandedOrder)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getCategoryShowcaseSamples' : IDL.Func(
+        [ShowcaseCategory],
+        [ShowcaseSamples],
+        ['query'],
+      ),
     'getConfirmationMessageTemplate' : IDL.Func([], [IDL.Text], ['query']),
     'getCustomerOrders' : IDL.Func(
         [IDL.Text],
@@ -498,7 +529,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ExpandedOrder)],
         ['query'],
       ),
-    'getProductBannerSamples' : IDL.Func([], [ProductBanners], ['query']),
     'getSamples' : IDL.Func([], [IDL.Vec(Sample)], ['query']),
     'getServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
     'getStripeSessionStatus' : IDL.Func([IDL.Text], [StripeSessionStatus], []),
@@ -526,8 +556,8 @@ export const idlFactory = ({ IDL }) => {
       ),
     'updateOrderPaymentStatus' : IDL.Func([IDL.Nat, PaymentStatus], [], []),
     'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
-    'updateProductBannerSamples' : IDL.Func(
-        [IDL.Vec(ProductBannerSampleUpdate)],
+    'updateShowcaseSamples' : IDL.Func(
+        [ShowcaseCategory, IDL.Vec(ShowcaseSampleUpdate)],
         [],
         [],
       ),

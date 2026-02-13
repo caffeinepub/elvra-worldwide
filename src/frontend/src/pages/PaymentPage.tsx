@@ -69,8 +69,8 @@ export default function PaymentPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => navigate({ to: '/dashboard' })}>
-                Return to Dashboard
+              <Button onClick={() => navigate({ to: '/my-orders' })}>
+                Return to My Orders
               </Button>
             </CardContent>
           </Card>
@@ -242,13 +242,13 @@ export default function PaymentPage() {
             </Button>
 
             <Button
-              onClick={() => navigate({ to: '/dashboard' })}
+              onClick={() => navigate({ to: '/my-orders' })}
               variant="outline"
               size="lg"
               className="w-full"
               disabled={createCheckoutSession.isPending}
             >
-              Cancel & Return to Dashboard
+              Cancel & Return to My Orders
             </Button>
           </CardContent>
         </Card>

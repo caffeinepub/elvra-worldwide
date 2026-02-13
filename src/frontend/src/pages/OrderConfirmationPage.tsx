@@ -47,11 +47,11 @@ export default function OrderConfirmationPage() {
           <Card className="shadow-luxury">
             <CardContent className="pt-6">
               <Button
-                onClick={() => navigate({ to: '/dashboard' })}
+                onClick={() => navigate({ to: '/my-orders' })}
                 className="w-full"
               >
                 <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
+                Go to My Orders
               </Button>
             </CardContent>
           </Card>

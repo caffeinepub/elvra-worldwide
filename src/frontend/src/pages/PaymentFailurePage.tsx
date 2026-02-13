@@ -31,7 +31,7 @@ export default function PaymentFailurePage() {
           <CardContent className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4">
               <p className="text-sm text-muted-foreground">
-                You can try again or return to your dashboard to review your order.
+                You can try again or return to your orders to review your order.
               </p>
             </div>
 
@@ -48,13 +48,13 @@ export default function PaymentFailurePage() {
               )}
               
               <Button
-                onClick={() => navigate({ to: '/dashboard' })}
+                onClick={() => navigate({ to: '/my-orders' })}
                 variant="outline"
                 className="w-full"
                 size="lg"
               >
                 <Home className="mr-2 h-4 w-4" />
-                Return to Dashboard
+                Return to My Orders
               </Button>
             </div>
           </CardContent>

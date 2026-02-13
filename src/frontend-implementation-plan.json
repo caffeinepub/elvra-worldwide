@@ -1,52 +1,114 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Replace Product Banner Sample 1–4 fallback images and ensure updated build output",
+  "title": "Restore Explore Our Work 12-slot galleries with admin-only uploads (frontend)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Overwrite the four static fallback Product Banner sample images (Sample 1–4) so the sample selector displays the newly provided designs when backend samples are missing.",
+      "id": "REQ-2",
+      "summary": "Render 12-slot “Explore Our Work” samples galleries (with placeholders for empty slots) on the four product pages.",
       "acceptanceCriteria": [
-        "The following public URLs still exist and return images, but now display the newly provided designs: `/assets/generated/sample1.dim_1200x800.jpg`, `/assets/generated/sample2.dim_1200x800.jpg`, `/assets/generated/sample3.dim_1200x800.jpg`, `/assets/generated/sample4.dim_1200x800.jpg`.",
-        "The four new images are applied in sequence using the first four uploaded files in the upload order: (1) `Screenshot_20260213-192911 (1).png` → Sample 1, (2) `Screenshot_20260213-192903 (1).png` → Sample 2, (3) `Screenshot_20260213-192858 (1).png` → Sample 3, (4) `Screenshot_20260213-192911 (1)-1.png` → Sample 4.",
-        "Old sample images are no longer present in the repository under those sample1–sample4 filenames (they are overwritten/replaced).",
-        "On the Dashboard ordering flow sample selector (`frontend/src/components/ProductSampleSelector.tsx`), selecting Sample 1–4 shows the replaced images (via fallbackUrl when backend samples are null)."
+        "Each of the four product pages shows a samples section with exactly 12 labeled slots (Sample 1 through Sample 12).",
+        "If a slot has an uploaded image, it is displayed; if not, the slot displays a consistent placeholder (English text) indicating no image uploaded yet.",
+        "The samples gallery is visible to all visitors (customers can view but not edit).",
+        "All user-facing text added for this feature is in English."
       ],
       "file_operations": [
         {
-          "path": "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
+          "path": "frontend/src/hooks/useProductBannerSamples.ts",
           "operation": "modify",
-          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192911 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+          "description": "Refactor the existing product banner samples hook to use the backend’s category-based showcase samples (e.g., getCategoryShowcaseSamples/updateShowcaseSamples) and normalize data into exactly 12 ordered slots (1–12) with stable identifiers and placeholder metadata. Use the blob-storage ExternalBlob.getDirectURL() for rendering uploaded images. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
-          "operation": "modify",
-          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192903 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+          "path": "frontend/src/hooks/useShowcaseSamples.ts",
+          "operation": "create",
+          "description": "Add reusable React Query hooks for reading showcase samples by ShowcaseCategory and mapping the backend’s samples array into 12 UI slots (1–12). Expose a helper to build a consistent placeholder label/text for empty slots in English. Use blob-storage ExternalBlob.getDirectURL() for image display. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
-          "operation": "modify",
-          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192858 (1).png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+          "path": "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+          "operation": "create",
+          "description": "Create a shared gallery component that renders an “Explore Our Work” section with 12 labeled tiles (Sample 1–12). For empty slots, render a visible placeholder tile with English text (e.g., “No image uploaded yet”). When present, render the sample image via ExternalBlob.getDirectURL(). Use shadcn-ui Card/Badge (or existing project UI primitives) for consistent styling. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/public/assets/generated/sample4.dim_1200x800.jpg",
+          "path": "frontend/src/pages/BusinessCardPage.tsx",
           "operation": "modify",
-          "description": "Replace/overwrite this static asset with the content from `Screenshot_20260213-192911 (1)-1.png`, ensuring the final file remains a JPG at 1200x800 and is accessible at the same URL."
+          "description": "Wire the ExploreWorkSamplesGallery into the Business Card product page, configured for the Business Card showcase category, ensuring it always renders 12 slots with placeholders and uses only English labels."
+        },
+        {
+          "path": "frontend/src/pages/LogoDesignPage.tsx",
+          "operation": "modify",
+          "description": "Wire the ExploreWorkSamplesGallery into the Brand Logo Design product page, configured for the Logo Design showcase category, ensuring it always renders 12 slots with placeholders and uses only English labels."
+        },
+        {
+          "path": "frontend/src/pages/ProductBannerPage.tsx",
+          "operation": "modify",
+          "description": "Wire the ExploreWorkSamplesGallery into the Product Banner Design page, configured for the Product Banner showcase category, ensuring it always renders 12 slots with placeholders and uses only English labels."
+        },
+        {
+          "path": "frontend/src/pages/PhotoFramePage.tsx",
+          "operation": "modify",
+          "description": "Wire the ExploreWorkSamplesGallery into the Photo Frame Design page, configured for the Photo Frame showcase category, ensuring it always renders 12 slots with placeholders and uses only English labels."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Ensure the frontend build output updates cleanly after image replacement so the draft/preview reflects the new Sample 1–4 assets.",
+      "id": "REQ-3",
+      "summary": "Provide an admin-only UI for uploading/replacing/removing showcase sample images across all four categories and all 12 slots, with validation and automatic gallery refresh.",
       "acceptanceCriteria": [
-        "Build completes successfully without errors.",
-        "Deployment completes successfully and the updated draft/preview app reflects the new Sample 1–4 images in the Product Banner sample selector."
+        "When the logged-in caller is not an admin, the upload controls are not rendered and sample update actions cannot be triggered from the UI.",
+        "When the caller is an admin, the UI allows selecting files and uploading updates for any subset of Sample 1–12 for each category.",
+        "Uploads accept JPG/PNG and show clear English validation errors for invalid file types.",
+        "After a successful upload, the affected product page galleries show the new images without requiring a hard refresh (React Query invalidation/refetch)."
       ],
       "file_operations": [
         {
-          "path": "frontend/public/deploy-marker.txt",
+          "path": "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
           "operation": "create",
-          "description": "Add a small deploy marker file (e.g., with a timestamp and note about Sample 1–4 image replacement) to help confirm the latest frontend build artifacts were produced and deployed."
+          "description": "Create an admin panel UI to manage Explore Our Work samples for all categories (Business Card, Logo Design, Product Banner, Photo Frame). Allow selecting a category, show 12 sample slots with current previews (if present), support uploading/replacing for any subset, and provide a per-slot remove action where supported. Enforce JPG/PNG validation with clear English error messages. Use blob-storage ExternalBlob.fromBytes(...).withUploadProgress(...) for uploads and show progress. Use shadcn-ui form components (Card, Button, Input, Select, Alert) for consistent UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useShowcaseSamples.ts",
+          "operation": "modify",
+          "description": "Add a React Query mutation hook for updating showcase samples by category that invalidates/refetches the relevant category query key (and any aggregated queries if used). Use backend admin verification patterns from the authorization component (e.g., isCallerAdmin + admin-gated UI). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AdminGate.tsx",
+          "operation": "modify",
+          "description": "Ensure AdminGate remains the single guard for admin-only UI, and optionally support a default fallback that can show an English access-denied message when needed. Use the existing authorization role check hook patterns. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+          "operation": "modify",
+          "description": "Deprecate/redirect the existing Product Banner-only admin panel to the new multi-category ExploreWorkSamplesAdminPanel (either replace its internals or re-export the new panel) so there is a single admin experience for managing 12 slots. Keep all added user-facing text in English. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "operation": "modify",
+          "description": "Wire the new ExploreWorkSamplesAdminPanel into the existing AdminGate-protected Admin Panel section on the dashboard, ensuring non-admins cannot see or interact with sample upload controls. Keep the admin tools in the dashboard (no new public routes)."
+        },
+        {
+          "path": "frontend/src/components/ProductSampleSelector.tsx",
+          "operation": "modify",
+          "description": "Update the sample selector to align with the new 12-slot product banner showcase source (using the refactored hook) so any internal sample browsing remains consistent, while keeping the selector’s customer UX read-only. Ensure placeholder text remains English."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Prevent regressions: keep the Home page “Our Premium Services” section unchanged and ensure no sample UI is added there.",
+      "acceptanceCriteria": [
+        "No new sample UI is added inside the Home page “Our Premium Services” section.",
+        "The existing “Our Premium Services” cards, text, and layout remain functionally identical after the change."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/__tests__/HomePagePremiumServices.test.tsx",
+          "operation": "create",
+          "description": "Add a regression test that renders HomePage and asserts the “Our Premium Services” section remains present and does not include any “Explore Our Work” sample gallery UI/labels (e.g., does not render “Sample 1” within the premium services section). Keep all assertions and any added text in English."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Do not change content/layout; only make minimal non-functional adjustments if required to support the new test harness (e.g., adding stable test ids to the Premium Services section container). Ensure no sample/gallery UI is added into the “Our Premium Services” section and all user-facing text remains unchanged."
         }
       ]
     }

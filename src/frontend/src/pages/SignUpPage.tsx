@@ -24,7 +24,7 @@ export default function SignUpPage() {
   useEffect(() => {
     if (isAuthenticated) {
       if (isFetched && existingProfile) {
-        navigate({ to: '/dashboard' });
+        navigate({ to: '/my-orders' });
       } else if (isFetched && !profileLoading) {
         setStep('profile');
       }
@@ -69,7 +69,7 @@ export default function SignUpPage() {
         email: formData.email
       });
 
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/my-orders' });
     } catch (error) {
       console.error('Error saving profile:', error);
     }

@@ -1,11 +1,27 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
-import ProductAddToCartSection from '../components/ProductAddToCartSection';
+import { useAuthState } from '../hooks/useAuthState';
 import { getPremiumServiceByName } from '../constants/premiumServices';
+import { storeSessionParameter } from '../utils/urlParams';
+import ExploreWorkSamplesGallery from '../components/ExploreWorkSamplesGallery';
+import { ShowcaseCategory } from '../backend';
 
 export default function LogoDesignPage() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthState();
   const service = getPremiumServiceByName('Brand Logo Design');
   
+  const handleOrderNow = () => {
+    if (isAuthenticated && service) {
+      storeSessionParameter('orderProduct', service.name);
+      storeSessionParameter('orderPrice', service.priceLabel);
+      storeSessionParameter('orderDelivery', service.deliveryTime);
+      navigate({ to: '/order' });
+    } else {
+      navigate({ to: '/login' });
+    }
+  };
+
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,11 +33,11 @@ export default function LogoDesignPage() {
           Back to Home
         </Link>
         
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Logo Design</h1>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Brand Logo Design</h1>
             <p className="text-lg text-muted-foreground">
-              Distinctive logo designs that capture your brand's essence.
+              Professional logo designs that define your brand identity.
             </p>
           </div>
 
@@ -33,14 +49,20 @@ export default function LogoDesignPage() {
             />
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-8">
+          <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-12">
             <h2 className="text-2xl font-serif font-bold mb-4">About This Product</h2>
             <p className="text-muted-foreground mb-6">
-              Create a powerful visual identity with our custom logo design services. We craft unique, 
-              memorable logos that embody your brand's values and resonate with your target audience. 
-              From concept to final delivery, we ensure every detail aligns with your vision.
+              Our logo design service creates unique, memorable brand identities that resonate with your target audience. 
+              We combine creativity with strategic thinking to deliver logos that stand the test of time and effectively 
+              communicate your brand values.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleOrderNow}
+                className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-luxury"
+              >
+                Order Now - {service?.priceLabel}
+              </button>
               <Link
                 to="/contact"
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
@@ -50,11 +72,7 @@ export default function LogoDesignPage() {
             </div>
           </div>
 
-          <ProductAddToCartSection 
-            productName="Brand Logo Design"
-            price={service?.priceLabel || '$30'}
-            deliveryTime={service?.deliveryTime || 'Delivery: 3 Business Days'}
-          />
+          <ExploreWorkSamplesGallery category={ShowcaseCategory.logoDesign} />
         </div>
       </div>
     </div>

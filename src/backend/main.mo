@@ -12,15 +12,15 @@ import List "mo:core/List";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Storage "blob-storage/Storage";
+import Migration "migration";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-
 import MixinStorage "blob-storage/Mixin";
 
 // Apply migration in with clause
 
-actor {
+(with migration = Migration.run) actor {
   // ==== Types ====
   public type Service = {
     id : Nat;
@@ -91,14 +91,31 @@ actor {
     timestamp : Time.Time;
   };
 
-  public type ProductBannerSample = {
+  public type ShowcaseSample = {
     file : Storage.ExternalBlob;
     description : Text;
   };
 
-  public type ProductBannerSampleUpdate = {
-    position : Nat;
-    sample : ?ProductBannerSample;
+  public type ShowcaseSampleUpdate = {
+    position : Nat; // Always between 1–12 for all sample categories!
+    sample : ?ShowcaseSample;
+  };
+
+  public type ShowcaseCategory = {
+    #businessCard;
+    #logoDesign;
+    #productBanner;
+    #photoFrame;
+  };
+
+  public type ShowcaseSamples = {
+    samples : [?ShowcaseSample];
+  };
+  public type AllShowcaseSamples = {
+    businessCard : ShowcaseSamples;
+    logoDesign : ShowcaseSamples;
+    productBanner : ShowcaseSamples;
+    photoFrame : ShowcaseSamples;
   };
 
   public type OrderStatus = {
@@ -195,18 +212,11 @@ actor {
   var nextConfirmationEmailRequestId = 1;
   var stripeConfiguration : ?StripeConfiguration = null;
 
-  // New Product banners
-  public type ProductBanners = {
-    sample1 : ?ProductBannerSample;
-    sample2 : ?ProductBannerSample;
-    sample3 : ?ProductBannerSample;
-    sample4 : ?ProductBannerSample;
-  };
-  var bannerSamples : ProductBanners = {
-    sample1 = null;
-    sample2 = null;
-    sample3 = null;
-    sample4 = null;
+  var showcaseSamples : AllShowcaseSamples = {
+    businessCard = { samples = Array.tabulate(12, func(_) { null }) };
+    logoDesign = { samples = Array.tabulate(12, func(_) { null }) };
+    productBanner = { samples = Array.tabulate(12, func(_) { null }) };
+    photoFrame = { samples = Array.tabulate(12, func(_) { null }) };
   };
 
   // ==== Initialize authorization ====
@@ -214,24 +224,72 @@ actor {
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // ==== Product Banners API ====
-  public query func getProductBannerSamples() : async ProductBanners {
-    bannerSamples;
+  // ==== Showcase Samples API (12 slots for each category) ====
+  public query func getAllShowcaseSamples() : async AllShowcaseSamples {
+    showcaseSamples;
   };
 
-  public shared ({ caller }) func updateProductBannerSamples(updates : [ProductBannerSampleUpdate]) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admin can modify product samples");
+  public query func getCategoryShowcaseSamples(category : ShowcaseCategory) : async ShowcaseSamples {
+    switch (category) {
+      case (#businessCard) { showcaseSamples.businessCard };
+      case (#logoDesign) { showcaseSamples.logoDesign };
+      case (#productBanner) { showcaseSamples.productBanner };
+      case (#photoFrame) { showcaseSamples.photoFrame };
     };
-    updates.forEach(func(update) {
-      switch (update.position) {
-        case (1) { bannerSamples := { bannerSamples with sample1 = update.sample } };
-        case (2) { bannerSamples := { bannerSamples with sample2 = update.sample } };
-        case (3) { bannerSamples := { bannerSamples with sample3 = update.sample } };
-        case (4) { bannerSamples := { bannerSamples with sample4 = update.sample } };
-        case (_) { Runtime.trap("Invalid sample position") };
+  };
+
+  public shared ({ caller }) func updateShowcaseSamples(
+    category : ShowcaseCategory,
+    updates : [ShowcaseSampleUpdate],
+  ) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can modify showcase samples");
+    };
+
+    let updateCategory = func(existing : ShowcaseSamples) : ShowcaseSamples {
+      var updatedSamples = existing.samples;
+      updates.forEach(
+        func(update) {
+          if (update.position < 1 or update.position > 12) {
+            Runtime.trap("Invalid sample position (must be 1-12)");
+          };
+          updatedSamples := Array.tabulate(
+            12,
+            func(i) {
+              if (i == update.position - 1) { update.sample } else { updatedSamples[i] };
+            }
+          );
+        }
+      );
+      { samples = updatedSamples };
+    };
+
+    showcaseSamples := switch (category) {
+      case (#businessCard) {
+        {
+          showcaseSamples with
+          businessCard = updateCategory(showcaseSamples.businessCard)
+        };
       };
-    });
+      case (#logoDesign) {
+        {
+          showcaseSamples with
+          logoDesign = updateCategory(showcaseSamples.logoDesign)
+        };
+      };
+      case (#productBanner) {
+        {
+          showcaseSamples with
+          productBanner = updateCategory(showcaseSamples.productBanner)
+        };
+      };
+      case (#photoFrame) {
+        {
+          showcaseSamples with
+          photoFrame = updateCategory(showcaseSamples.photoFrame)
+        };
+      };
+    };
   };
 
   // ==== Add Service ====
@@ -376,8 +434,6 @@ actor {
   };
 
   // ==== Stripe Payment Integration (New Section) ====
-
-  // Configure Stripe (Admin Only)
   public shared ({ caller }) func setStripeConfiguration(config : Stripe.StripeConfiguration) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can configure Stripe");
@@ -385,7 +441,6 @@ actor {
     stripeConfiguration := ?config;
   };
 
-  // Get Stripe configuration (internal function)
   func getStripeConfiguration() : StripeConfiguration {
     switch (stripeConfiguration) {
       case (null) { Runtime.trap("Stripe needs to be first configured") };
@@ -393,12 +448,10 @@ actor {
     };
   };
 
-  // Check if Stripe is configured
   public query func isStripeConfigured() : async Bool {
     stripeConfiguration != null;
   };
 
-  // Get Stripe session status - requires user authentication
   public shared ({ caller }) func getStripeSessionStatus(sessionId : Text) : async Stripe.StripeSessionStatus {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can check Stripe session status");
@@ -406,7 +459,6 @@ actor {
     await Stripe.getSessionStatus(getStripeConfiguration(), sessionId, transform);
   };
 
-  // Create Stripe checkout session - requires user authentication
   public shared ({ caller }) func createCheckoutSession(items : [ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create checkout sessions");
@@ -414,7 +466,6 @@ actor {
     await Stripe.createCheckoutSession(getStripeConfiguration(), caller, items, successUrl, cancelUrl, transform);
   };
 
-  // Transform function for Stripe
   public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
     OutCall.transform(input);
   };
@@ -593,5 +644,33 @@ actor {
     };
     "Thank you for your order, {customer_name}! Your order ID is {order_id}. ...";
   };
-};
 
+  // ==== New: Cancel Order (24 hours restriction) ====
+  public shared ({ caller }) func cancelOrder(orderId : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel orders");
+    };
+
+    switch (expandedOrders.get(orderId)) {
+      case (null) {
+        Runtime.trap("Order not found");
+      };
+      case (?order) {
+        // Verify caller is the order owner
+        if (order.owner != caller) {
+          Runtime.trap("Unauthorized: Can only cancel your own orders");
+        };
+
+        // Verify 24-hour time window (nanoseconds to hours conversion)
+        let hoursSinceOrder = (Time.now() - order.timestamp) / (1_000_000_000 * 3600);
+        if (hoursSinceOrder > 24) {
+          Runtime.trap("Orders can only be cancelled within 24 hours of creation");
+        };
+
+        // Update order status to cancelled (preserve all other fields)
+        let updatedOrder = { order with orderStatus = #cancelled };
+        expandedOrders.add(orderId, updatedOrder);
+      };
+    };
+  };
+};

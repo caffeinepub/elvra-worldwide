@@ -34,8 +34,8 @@ export default function TrackOrderPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => navigate({ to: '/dashboard' })}>
-                Return to Dashboard
+              <Button onClick={() => navigate({ to: '/my-orders' })}>
+                Return to My Orders
               </Button>
             </CardContent>
           </Card>
@@ -99,12 +99,12 @@ export default function TrackOrderPage() {
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <Button
-          onClick={() => navigate({ to: '/dashboard' })}
+          onClick={() => navigate({ to: '/my-orders' })}
           variant="ghost"
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          Back to My Orders
         </Button>
 
         <div className="mb-8">
@@ -185,7 +185,7 @@ export default function TrackOrderPage() {
                   </div>
                   <div>
                     <p className="font-medium">Confirmed</p>
-                    <p className="text-sm text-muted-foreground">Order confirmed and being prepared</p>
+                    <p className="text-sm text-muted-foreground">Order confirmed and in progress</p>
                   </div>
                 </div>
 
@@ -195,7 +195,7 @@ export default function TrackOrderPage() {
                   </div>
                   <div>
                     <p className="font-medium">Shipped</p>
-                    <p className="text-sm text-muted-foreground">Order shipped and in transit</p>
+                    <p className="text-sm text-muted-foreground">Design completed and sent</p>
                   </div>
                 </div>
 
@@ -205,7 +205,7 @@ export default function TrackOrderPage() {
                   </div>
                   <div>
                     <p className="font-medium">Delivered</p>
-                    <p className="text-sm text-muted-foreground">Order successfully delivered</p>
+                    <p className="text-sm text-muted-foreground">Design delivered to your email</p>
                   </div>
                 </div>
               </div>
@@ -218,16 +218,16 @@ export default function TrackOrderPage() {
             <CardTitle>Payment Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Status</span>
-                <Badge variant="outline" className="capitalize">
-                  {order.paymentStatus}
-                </Badge>
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium capitalize">{order.paymentStatus}</p>
+                <p className="text-sm text-muted-foreground">
+                  {getPaymentStatusDescription(order.paymentStatus)}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {getPaymentStatusDescription(order.paymentStatus)}
-              </p>
+              <Badge variant={order.paymentStatus === PaymentStatus.verified || order.paymentStatus === PaymentStatus.confirmed ? 'default' : 'secondary'}>
+                {order.paymentStatus}
+              </Badge>
             </div>
           </CardContent>
         </Card>
@@ -243,14 +243,6 @@ export default function TrackOrderPage() {
                 <p className="font-medium">{order.product}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Selected Sample</p>
-                <p className="font-medium">{order.sampleSelected}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Brand Name</p>
-                <p className="font-medium">{order.brandName}</p>
-              </div>
-              <div>
                 <p className="text-sm text-muted-foreground">Price</p>
                 <p className="font-medium">{order.price}</p>
               </div>
@@ -259,11 +251,19 @@ export default function TrackOrderPage() {
                 <p className="font-medium">{order.deliveryTime}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Order Date</p>
-                <p className="font-medium">
-                  {new Date(Number(order.timestamp) / 1000000).toLocaleDateString()}
-                </p>
+                <p className="text-sm text-muted-foreground">Customer Name</p>
+                <p className="font-medium">{order.name}</p>
               </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{order.email}</p>
+              </div>
+              {order.brandName && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Brand Name</p>
+                  <p className="font-medium">{order.brandName}</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

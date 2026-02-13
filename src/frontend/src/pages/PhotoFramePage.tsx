@@ -1,11 +1,27 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
-import ProductAddToCartSection from '../components/ProductAddToCartSection';
+import { useAuthState } from '../hooks/useAuthState';
 import { getPremiumServiceByName } from '../constants/premiumServices';
+import { storeSessionParameter } from '../utils/urlParams';
+import ExploreWorkSamplesGallery from '../components/ExploreWorkSamplesGallery';
+import { ShowcaseCategory } from '../backend';
 
 export default function PhotoFramePage() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthState();
   const service = getPremiumServiceByName('Photo Frame Design');
   
+  const handleOrderNow = () => {
+    if (isAuthenticated && service) {
+      storeSessionParameter('orderProduct', service.name);
+      storeSessionParameter('orderPrice', service.priceLabel);
+      storeSessionParameter('orderDelivery', service.deliveryTime);
+      navigate({ to: '/order' });
+    } else {
+      navigate({ to: '/login' });
+    }
+  };
+
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,11 +33,11 @@ export default function PhotoFramePage() {
           Back to Home
         </Link>
         
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Photo Frame</h1>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">Photo Frame Design</h1>
             <p className="text-lg text-muted-foreground">
-              Elegant photo frame designs that enhance your cherished memories.
+              Beautiful photo frame designs that showcase your memories perfectly.
             </p>
           </div>
 
@@ -33,14 +49,20 @@ export default function PhotoFramePage() {
             />
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-8">
+          <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-12">
             <h2 className="text-2xl font-serif font-bold mb-4">About This Product</h2>
             <p className="text-muted-foreground mb-6">
-              Transform your favorite moments into works of art with our custom photo frame designs. 
-              Whether for personal use or as a gift, our frames combine aesthetic appeal with quality 
-              craftsmanship to beautifully showcase your most treasured photographs.
+              Our photo frame designs add elegance and personality to your cherished memories. 
+              Each frame is thoughtfully designed to complement your photos while adding a touch 
+              of sophistication to any space.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleOrderNow}
+                className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-luxury"
+              >
+                Order Now - {service?.priceLabel}
+              </button>
               <Link
                 to="/contact"
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
@@ -50,11 +72,7 @@ export default function PhotoFramePage() {
             </div>
           </div>
 
-          <ProductAddToCartSection 
-            productName="Photo Frame Design"
-            price={service?.priceLabel || '$15'}
-            deliveryTime={service?.deliveryTime || 'Delivery: 3 Business Days'}
-          />
+          <ExploreWorkSamplesGallery category={ShowcaseCategory.photoFrame} />
         </div>
       </div>
     </div>

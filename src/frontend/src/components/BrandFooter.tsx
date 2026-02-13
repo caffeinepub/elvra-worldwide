@@ -39,6 +39,12 @@ export default function BrandFooter() {
               <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Contact
               </Link>
+              <Link to="/my-orders" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                My Orders
+              </Link>
+              <Link to="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Help
+              </Link>
             </nav>
           </div>
 
@@ -72,4 +78,3 @@ export default function BrandFooter() {
     </footer>
   );
 }
-

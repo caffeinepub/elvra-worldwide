@@ -1,57 +1,52 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T14:34:01.697Z",
-  "summary": "The diff does not show evidence that the four fallback sample images under `/assets/generated/sample1–sample4.dim_1200x800.jpg` were actually replaced, nor any changes to the frontend sample-slot hook/selector wiring. It also includes several changes that were not requested (a deploy marker file, project state metadata updates, and backend code modifications).",
+  "generatedAt": "2026-02-13T20:36:03.556Z",
+  "summary": "Frontend adds a reusable 12-slot “Explore Our Work” gallery and wires it into the four product pages, plus adds a new admin upload panel component and React Query hooks. Backend adds new showcase sample types and a migration to expand Product Banner samples from 4 to 12 and add new categories. However, the diff summary does not show the required backend public read/admin-only write APIs or their authorization enforcement, and it’s unclear from the truncated Dashboard/admin code whether the admin UI is actually gated from non-admin users.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Replace the four static fallback Product Banner sample images (sample1–sample4.dim_1200x800.jpg referenced by useSampleSlots in frontend/src/hooks/useProductBannerSamples.ts) with the provided uploaded images in order, so Sample 1–4 display the new images even when backend has no stored samples.",
-      "reason": "The diff summary does not show any modifications/additions to the actual image files under `frontend/public/assets/generated/` (or equivalent) and does not show any changes to `frontend/src/hooks/useProductBannerSamples.ts` or `frontend/src/components/ProductSampleSelector.tsx` confirming the fallback URLs now point to replaced assets. Only a text marker file claims the mapping.",
+      "requirement": "Provide backend public read APIs to fetch samples per category, and admin-only write APIs to upload/replace/remove samples by slot position (1–12), enforcing non-admin authorization errors and allowing partial updates without affecting other slots.",
+      "reason": "Frontend hooks call actor.getCategoryShowcaseSamples(category) and actor.updateShowcaseSamples(category, updates), but the diff summary for backend/main.mo is truncated before any function/API definitions or authorization checks are shown. Therefore implementation of the required APIs and admin-only enforcement cannot be verified from the provided diff evidence.",
       "evidence": [
-        "frontend/public/deploy-marker.txt",
-        "frontend-file-summaries.txt"
+        "backend/main.mo (truncated; types added but no API methods/guards shown)",
+        "frontend/src/hooks/useShowcaseSamples.ts (calls getCategoryShowcaseSamples/updateShowcaseSamples)"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Rebuild and redeploy the app after the image replacement, fixing any build/deploy errors so the draft/preview updates.",
-      "reason": "No build/deploy configuration, scripts, CI logs, or deployment-related changes are shown that would demonstrate a successful rebuild/redeploy or a fix for the deployment error.",
+      "id": "REQ-3",
+      "requirement": "Ensure the admin upload UI is not accessible to non-admin users (hide UI and block actions).",
+      "reason": "An admin panel component is added, and DashboardPage imports AdminGate and the admin panel, but the diff excerpt is truncated before showing that ExploreWorkSamplesAdminPanel is wrapped/guarded by an admin-only gate or that non-admins are prevented from triggering actions. So admin-only gating cannot be confirmed from the evidence provided.",
       "evidence": [
-        "frontend/public/deploy-marker.txt",
-        "project_state.json"
+        "frontend/src/pages/DashboardPage.tsx (truncated; imports AdminGate and ExploreWorkSamplesAdminPanel but gating usage not shown)",
+        "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx (no explicit admin check shown in excerpt)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Modified backend canister code (backend/main.mo) despite the request being solely to replace frontend fallback sample images and rebuild/redeploy.",
-      "reason": "BuildRequest does not ask for backend logic changes for this task; backend edits are unexpected and could violate the constraint to change backend only if required.",
+      "description": "Legacy Product Banner sample-slot hook continues to define only 4 sample slots with hardcoded fallback URLs, which is not part of the requested 12-slot restoration behavior.",
+      "reason": "REQ-2 requires exactly 12 labeled slots for the Product Banner gallery. The modified useProductBannerSamples.ts still returns an array of only 4 slots and includes fallbackUrl fields pointing to local generated assets, which is extra/legacy behavior not requested by the BuildRequest.",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Added a deployment marker text file in the frontend public folder.",
-      "reason": "Not requested by the BuildRequest; it does not itself implement the image replacement requirement.",
-      "evidence": [
-        "frontend/public/deploy-marker.txt"
-      ]
-    },
-    {
-      "description": "Modified project metadata/state tracking (project_state.json) and a large frontend file summaries text file.",
-      "reason": "Not requested as part of image replacement or rebuild/redeploy requirements.",
-      "evidence": [
-        "project_state.json",
-        "frontend-file-summaries.txt"
+        "frontend/src/hooks/useProductBannerSamples.ts (useSampleSlots returns 4 entries with fallbackUrl values)"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/public/deploy-marker.txt",
+    "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+    "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
+    "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+    "frontend/src/hooks/useProductBannerSamples.ts",
+    "frontend/src/hooks/useShowcaseSamples.ts",
+    "frontend/src/pages/BusinessCardPage.tsx",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/LogoDesignPage.tsx",
+    "frontend/src/pages/PhotoFramePage.tsx",
+    "frontend/src/pages/ProductBannerPage.tsx",
     "project_state.json"
   ]
 }

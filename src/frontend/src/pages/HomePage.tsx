@@ -4,6 +4,7 @@ import ServiceCard from '../components/ServiceCard';
 import { ArrowRight } from 'lucide-react';
 import { PREMIUM_SERVICES } from '../constants/premiumServices';
 import { useEffect } from 'react';
+import { storeSessionParameter } from '../utils/urlParams';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuthState();
@@ -24,16 +25,12 @@ export default function HomePage() {
 
   const openOrder = (productName: string, price: number, delivery: string) => {
     if (isAuthenticated) {
-      sessionStorage.setItem('orderSelection', JSON.stringify({
-        productName,
-        price,
-        delivery
-      }));
+      // Store order details for the order form
+      storeSessionParameter('orderProduct', productName);
+      storeSessionParameter('orderPrice', `$${price}`);
+      storeSessionParameter('orderDelivery', delivery);
       
-      navigate({ 
-        to: '/dashboard',
-        search: { sample: productName }
-      });
+      navigate({ to: '/order' });
     } else {
       navigate({ to: '/login' });
     }
@@ -75,7 +72,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to={isAuthenticated ? '/dashboard' : '/signup'}
+                to={isAuthenticated ? '/my-orders' : '/signup'}
                 className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-luxury hover:shadow-xl"
               >
                 Get Started
@@ -132,48 +129,27 @@ export default function HomePage() {
               Discover our range of premium design products crafted with excellence.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {products.map((product) => (
-              <div
+              <Link
                 key={product.name}
-                onClick={() => navigate({ to: product.page })}
-                className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card hover:shadow-luxury transition-all duration-300 hover:scale-105"
+                to={product.page}
+                className="group relative overflow-hidden rounded-lg border border-border shadow-luxury hover:shadow-xl transition-all duration-300"
               >
                 <div className="aspect-video overflow-hidden">
-                  <img 
-                    src={product.banner} 
+                  <img
+                    src={product.banner}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-center group-hover:text-primary transition-colors">
+                <div className="p-4 bg-card">
+                  <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
                     {product.name}
                   </h3>
                 </div>
-              </div>
+              </Link>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 md:py-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-card to-accent/20 rounded-lg p-12 border border-border shadow-luxury">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
-              Ready to Elevate Your Brand?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Join hundreds of satisfied clients worldwide who trust Elvra for their design needs.
-            </p>
-            <Link
-              to={isAuthenticated ? '/dashboard' : '/signup'}
-              className="inline-flex items-center justify-center px-8 py-3 text-base font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 shadow-luxury"
-            >
-              Start Your Project Today
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
           </div>
         </div>
       </section>

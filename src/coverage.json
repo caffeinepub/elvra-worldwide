@@ -1,56 +1,104 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T14:34:01.700Z",
+  "generatedAt": "2026-02-13T20:36:03.559Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
+    "total": 5,
     "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample4.dim_1200x800.jpg"
-        ],
-        "matchedFiles": [
-          "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
-          "frontend/public/assets/generated/sample4.dim_1200x800.jpg"
-        ]
+        "summary": "Add backend support for storing and serving 12 sample images (Sample 1–12) for each “Explore Our Work” category: Business Card, Logo Design, Product Banner, and Photo Frame. Provide public read APIs to fetch samples per category, and admin-only write APIs to upload/replace/remove samples by slot position (1–12).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
+        "summary": "Update the frontend product pages for Business Card, Brand Logo Design, Product Banner Design, and Photo Frame Design to display an “Explore Our Work” samples gallery showing 12 slots (Sample 1–12) for that product category. Empty slots must still render as visible placeholders so the gallery never looks “missing”.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/public/deploy-marker.txt"
+          "frontend/src/hooks/useProductBannerSamples.ts",
+          "frontend/src/hooks/useShowcaseSamples.ts",
+          "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+          "frontend/src/pages/BusinessCardPage.tsx",
+          "frontend/src/pages/LogoDesignPage.tsx",
+          "frontend/src/pages/ProductBannerPage.tsx",
+          "frontend/src/pages/PhotoFramePage.tsx"
         ],
         "matchedFiles": [
-          "frontend/public/deploy-marker.txt"
+          "frontend/src/hooks/useProductBannerSamples.ts",
+          "frontend/src/hooks/useShowcaseSamples.ts",
+          "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+          "frontend/src/pages/BusinessCardPage.tsx",
+          "frontend/src/pages/LogoDesignPage.tsx",
+          "frontend/src/pages/ProductBannerPage.tsx",
+          "frontend/src/pages/PhotoFramePage.tsx"
         ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add an admin-only frontend interface to upload/replace Explore Our Work sample images for each category (Business Card, Logo Design, Product Banner, Photo Frame), for all 12 slots. Ensure this admin UI is not accessible to non-admin users (hide UI and block actions).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
+          "frontend/src/hooks/useShowcaseSamples.ts",
+          "frontend/src/components/AdminGate.tsx",
+          "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+          "frontend/src/pages/DashboardPage.tsx",
+          "frontend/src/components/ProductSampleSelector.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
+          "frontend/src/hooks/useShowcaseSamples.ts",
+          "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+          "frontend/src/pages/DashboardPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Ensure the Home page “Our Premium Services” section remains unchanged (no content edits and no samples added there) while implementing the Explore Our Work sample restoration.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/pages/__tests__/HomePagePremiumServices.test.tsx",
+          "frontend/src/pages/HomePage.tsx"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "If backend state schema changes are required to expand existing Product Banner samples (currently 4 slots) to 12 slots and to add other categories, add a conditional Motoko migration that preserves any already-stored Product Banner sample images (e.g., existing Sample 1–4 data) during upgrade.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/public/assets/generated/sample1.dim_1200x800.jpg",
-    "frontend/public/assets/generated/sample2.dim_1200x800.jpg",
-    "frontend/public/assets/generated/sample3.dim_1200x800.jpg",
-    "frontend/public/assets/generated/sample4.dim_1200x800.jpg",
-    "frontend/public/deploy-marker.txt",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+    "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
+    "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useProductBannerSamples.ts",
+    "frontend/src/hooks/useShowcaseSamples.ts",
+    "frontend/src/pages/BusinessCardPage.tsx",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/LogoDesignPage.tsx",
+    "frontend/src/pages/PhotoFramePage.tsx",
+    "frontend/src/pages/ProductBannerPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

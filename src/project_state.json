@@ -1,26 +1,28 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App deployment had an error; user wants to replace the 4 sample images in Explore Our Work → Product Banner (Sample 1–4) with new images in sequence, delete old images, and start a new build/deploy.",
-  "architectural_notes": [],
+  "summary": "Website update: Restore/add Sample 1–12 items under Home → Explore Our Work for multiple categories, with admin-only ability for the owner to upload/update photos; do not change Home → Our Premium Service section.",
+  "architectural_notes": [
+    "Only the admin (site owner) can upload/update Explore Our Work sample images; customers must not have access."
+  ],
   "known_issues": [
-    "Deployment error caused the draft app to not show/update"
+    "Explore Our Work samples for Business Card (and other specified categories) are missing and need Sample 1–12 restored/added."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-replace-the-existing-four-static-fallback-product-banner-sample-images-used-by-the-sample-selector-paths-referenced-by-usesampleslots-in-frontend-src-hooks-useproductbannersamples-ts-with-the-user-uploaded-images-in-sequence-so-that-explore-our-work-product-banner-sample-1-4-shows-the-new-images-even-when-the-backend-has-no-stored-samples",
-      "title": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
+      "id": "feature-update-the-frontend-product-pages-for-business-card-brand-logo-design-product-banner-design-and-photo-frame-design-to-display-an-explore-our-work-samples-gallery-showing-12-slots-sample-1-12-for-that-product-category-empty-slots-must-still-render-as-visible-placeholders-so-the-gallery-never-looks-missing",
+      "title": "Update the frontend product pages for Business Card, Brand Logo Design, Product Banner Design, and Photo Frame Design to display an “Explore Our Work” samples gallery showing 12 slots (Sample 1–12) for that product category. Empty slots must still render as visible placeholders so the gallery never looks “missing”.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-rebuild-and-redeploy-the-app-after-the-image-replacement-and-fix-any-build-deploy-errors-that-prevent-the-draft-app-from-updating",
-      "title": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
+      "id": "feature-add-an-admin-only-frontend-interface-to-upload-replace-explore-our-work-sample-images-for-each-category-business-card-logo-design-product-banner-photo-frame-for-all-12-slots-ensure-this-admin-ui-is-not-accessible-to-non-admin-users-hide-ui-and-block-actions",
+      "title": "Add an admin-only frontend interface to upload/replace Explore Our Work sample images for each category (Business Card, Logo Design, Product Banner, Photo Frame), for all 12 slots. Ensure this admin UI is not accessible to non-admin users (hide UI and block actions).",
       "reqIds": [
-        "REQ-2"
+        "REQ-3"
       ],
       "version": 1
     }
@@ -28,12 +30,48 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Replace Explore Our Work → Product Banner Sample 1–4 images with new images in sequence and delete old sample images; then rebuild/deploy",
+      "summary": "Add/restore Sample 1–12 entries under Home → Explore Our Work → Business Card, Logo Design, Product Banner, and Photo Frame categories",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Admin-only access so only the site owner can upload/update the Explore Our Work sample photos (customers cannot)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Ensure Home → Our Premium Service section remains unchanged (no sample additions or edits)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add backend support for storing and serving 12 sample images (Sample 1–12) for each “Explore Our Work” category: Business Card, Logo Design, Product Banner, and Photo Frame. Provide public read APIs to fetch samples per category, and admin-only write APIs to upload/replace/remove samples by slot position (1–12).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Ensure the Home page “Our Premium Services” section remains unchanged (no content edits and no samples added there) while implementing the Explore Our Work sample restoration.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "If backend state schema changes are required to expand existing Product Banner samples (currently 4 slots) to 12 slots and to add other categories, add a conditional Motoko migration that preserves any already-stored Product Banner sample images (e.g., existing Sample 1–4 data) during upgrade.",
+      "reqIds": [
+        "REQ-5"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Replace Product Banner Sample 1–4 images in Explore Our Work and rebuild/deploy",
+  "projectName": "Restore “Explore Our Work” Sample 1–12 galleries for Business Card, Logo Design, Product Banner, and Photo Frame with admin-only uploads",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

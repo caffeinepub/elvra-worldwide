@@ -91,10 +91,16 @@ export default function BrandHeader() {
             {isAuthenticated ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/my-orders"
                   className="text-sm font-medium transition-colors hover:text-primary"
                 >
-                  Dashboard
+                  My Orders
+                </Link>
+                <Link
+                  to="/help"
+                  className="text-sm font-medium transition-colors hover:text-primary"
+                >
+                  Help
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -165,11 +171,18 @@ export default function BrandHeader() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/dashboard"
+                    to="/my-orders"
                     className="text-sm font-medium transition-colors hover:text-primary"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Dashboard
+                    My Orders
+                  </Link>
+                  <Link
+                    to="/help"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Help
                   </Link>
                   <button
                     onClick={() => {

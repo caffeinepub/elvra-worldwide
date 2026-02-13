@@ -1,60 +1,119 @@
 {
   "kind": "build_request",
-  "title": "Replace Product Banner Sample 1–4 images in Explore Our Work and rebuild/deploy",
+  "title": "Restore “Explore Our Work” Sample 1–12 galleries for Business Card, Logo Design, Product Banner, and Photo Frame with admin-only uploads",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
-      "target": "frontend",
+      "text": "Add backend support for storing and serving 12 sample images (Sample 1–12) for each “Explore Our Work” category: Business Card, Logo Design, Product Banner, and Photo Frame. Provide public read APIs to fetch samples per category, and admin-only write APIs to upload/replace/remove samples by slot position (1–12).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-12"
+          "msg-user-1"
         ],
         "quotes": [
-          "existing sample photos  ko explore our work → product banner → sample 1 sample 2 sample 3 sample 4 hata kar  replace karna hai",
-          "Aap sequence se laga do poori tarah se delete karna",
-          "Build shuru karo"
+          "home page ➡️ explore our work ➡️ buisness card ➡️ yaha par sample gayab ho gye hai isme sample 1-12 sample add Karo",
+          "home page ➡️ explore our work ➡️ logo design ➡️ sample 1-12",
+          "home page ➡️ explore our work ➡️ product banner ➡️ sample 1-12",
+          "home page ➡️ explore our work ➡️ photo frame sample 1 -12 add karna hai",
+          "Admin only mai mere pass access rahe iska"
         ]
       },
       "acceptanceCriteria": [
-        "The following public URLs still exist and return images, but now display the newly provided designs: `/assets/generated/sample1.dim_1200x800.jpg`, `/assets/generated/sample2.dim_1200x800.jpg`, `/assets/generated/sample3.dim_1200x800.jpg`, `/assets/generated/sample4.dim_1200x800.jpg`.",
-        "The four new images are applied in sequence using the first four uploaded files in the upload order: (1) `Screenshot_20260213-192911 (1).png` → Sample 1, (2) `Screenshot_20260213-192903 (1).png` → Sample 2, (3) `Screenshot_20260213-192858 (1).png` → Sample 3, (4) `Screenshot_20260213-192911 (1)-1.png` → Sample 4.",
-        "Old sample images are no longer present in the repository under those sample1–sample4 filenames (they are overwritten/replaced).",
-        "On the Dashboard ordering flow sample selector (`frontend/src/components/ProductSampleSelector.tsx`), selecting Sample 1–4 shows the replaced images (via fallbackUrl when backend samples are null)."
+        "Backend can return a stable, ordered list/record of 12 sample slots per category (positions 1–12), where each slot may be empty or contain an uploaded image blob + description.",
+        "Non-admin callers cannot modify any sample slots; attempts trap/return an authorization error.",
+        "Admin callers can upload/replace any subset of slots (e.g., only Sample 7) without affecting the other slots.",
+        "Public (non-admin) callers can fetch samples for all categories without needing authentication (read-only)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
-      "target": "both",
+      "text": "Update the frontend product pages for Business Card, Brand Logo Design, Product Banner Design, and Photo Frame Design to display an “Explore Our Work” samples gallery showing 12 slots (Sample 1–12) for that product category. Empty slots must still render as visible placeholders so the gallery never looks “missing”.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-12"
+          "msg-user-1"
         ],
         "quotes": [
-          "🙏 We hit a snag during deployment",
-          "Build shuru karo"
+          "home page ➡️ explore our work ➡️ buisness card ➡️ yaha par sample gayab ho gye hai isme sample 1-12 sample add Karo",
+          "home page ➡️ explore our work ➡️ logo design ➡️ sample 1-12",
+          "home page ➡️ explore our work ➡️ product banner ➡️ sample 1-12",
+          "home page ➡️ explore our work ➡️ photo frame sample 1 -12 add karna hai"
         ]
       },
       "acceptanceCriteria": [
-        "Build completes successfully without errors.",
-        "Deployment completes successfully and the updated draft/preview app reflects the new Sample 1–4 images in the Product Banner sample selector."
+        "Each of the four product pages shows a samples section with exactly 12 labeled slots (Sample 1 through Sample 12).",
+        "If a slot has an uploaded image, it is displayed; if not, the slot displays a consistent placeholder (English text) indicating no image uploaded yet.",
+        "The samples gallery is visible to all visitors (customers can view but not edit).",
+        "All user-facing text added for this feature is in English."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Add an admin-only frontend interface to upload/replace Explore Our Work sample images for each category (Business Card, Logo Design, Product Banner, Photo Frame), for all 12 slots. Ensure this admin UI is not accessible to non-admin users (hide UI and block actions).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "Mai khud upload krunga photo",
+          "Admin only mai mere pass access rahe iska"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When the logged-in caller is not an admin, the upload controls are not rendered and sample update actions cannot be triggered from the UI.",
+        "When the caller is an admin, the UI allows selecting files and uploading updates for any subset of Sample 1–12 for each category.",
+        "Uploads accept JPG/PNG and show clear English validation errors for invalid file types.",
+        "After a successful upload, the affected product page galleries show the new images without requiring a hard refresh (React Query invalidation/refetch)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Ensure the Home page “Our Premium Services” section remains unchanged (no content edits and no samples added there) while implementing the Explore Our Work sample restoration.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "Main point aap home page ➡️ our premium service ➡️ buisness card design, brand logo design, photo frame design, product banner design inme change nhi karna hai kuch na hi inme sample add karna hai",
+          "Our premium service me kuch bhi change ment nhi karna hai"
+        ]
+      },
+      "acceptanceCriteria": [
+        "No new sample UI is added inside the Home page “Our Premium Services” section.",
+        "The existing “Our Premium Services” cards, text, and layout remain functionally identical after the change."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "If backend state schema changes are required to expand existing Product Banner samples (currently 4 slots) to 12 slots and to add other categories, add a conditional Motoko migration that preserves any already-stored Product Banner sample images (e.g., existing Sample 1–4 data) during upgrade.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ],
+        "quotes": [
+          "sample 1-12 sample add Karo",
+          "Mai khud upload krunga photo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On upgrade, previously uploaded Product Banner sample slots that existed before the change remain available in their corresponding positions after deployment.",
+        "No existing sample blob data is lost due to the upgrade."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Do not modify any files under `frontend/src/components/ui` (read-only Shadcn components).",
-    "Do not modify any files listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
-    "Backend must remain single-actor (all Motoko logic in `backend/main.mo`); add/adjust `backend/migration.mo` only if required for state compatibility."
+    "Use English for all user-facing text added/changed as part of this request.",
+    "Do not modify or add sample content inside Home → “Our Premium Services”.",
+    "Admin-only means only the admin principal(s) recognized by the existing backend authorization system can upload/update samples; customers must not be able to edit."
   ],
   "nonGoals": [
-    "Do not change the Product Banner design preview images (`/assets/generated/product-banner-original...` and `/assets/generated/product-banner-duplicate-with-photo...`).",
-    "Do not redesign the layout or add new product sections.",
-    "Do not add new authentication methods beyond Internet Identity.",
-    "Do not implement new admin features (admin upload UI and backend APIs already exist)."
+    "Do not add sample galleries to the Home page “Our Premium Services” section.",
+    "Do not implement third-party authentication; continue using the existing Internet Identity + backend admin verification.",
+    "Do not build customer-facing sample upload/edit functionality."
   ],
   "imageRequirements": {
     "required": [],

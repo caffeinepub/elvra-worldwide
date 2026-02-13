@@ -2,30 +2,16 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-existing-four-static-fallback-product-banner-sample-images-used-by-the-sample-selector-paths-referenced-by-usesampleslots-in-frontend-src-hooks-useproductbannersamples-ts-with-the-user-uploaded-images-in-sequence-so-that-explore-our-work-product-banner-sample-1-4-shows-the-new-images-even-when-the-backend-has-no-stored-samples",
-      "featureTitle": "Replace the existing four static fallback Product Banner sample images used by the sample selector (paths referenced by `useSampleSlots()` in `frontend/src/hooks/useProductBannerSamples.ts`) with the user-uploaded images, in sequence, so that Explore Our Work → Product Banner → Sample 1–4 shows the new images even when the backend has no stored samples.",
-      "files": [],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "stripe@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-rebuild-and-redeploy-the-app-after-the-image-replacement-and-fix-any-build-deploy-errors-that-prevent-the-draft-app-from-updating",
-      "featureTitle": "Rebuild and redeploy the app after the image replacement, and fix any build/deploy errors that prevent the draft app from updating.",
+      "featureId": "feature-update-the-frontend-product-pages-for-business-card-brand-logo-design-product-banner-design-and-photo-frame-design-to-display-an-explore-our-work-samples-gallery-showing-12-slots-sample-1-12-for-that-product-category-empty-slots-must-still-render-as-visible-placeholders-so-the-gallery-never-looks-missing",
+      "featureTitle": "Update the frontend product pages for Business Card, Brand Logo Design, Product Banner Design, and Photo Frame Design to display an “Explore Our Work” samples gallery showing 12 slots (Sample 1–12) for that product category. Empty slots must still render as visible placeholders so the gallery never looks “missing”.",
       "files": [
-        "frontend/public/deploy-marker.txt"
+        "frontend/src/components/ExploreWorkSamplesGallery.tsx",
+        "frontend/src/hooks/useProductBannerSamples.ts",
+        "frontend/src/hooks/useShowcaseSamples.ts",
+        "frontend/src/pages/BusinessCardPage.tsx",
+        "frontend/src/pages/LogoDesignPage.tsx",
+        "frontend/src/pages/PhotoFramePage.tsx",
+        "frontend/src/pages/ProductBannerPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -40,6 +26,31 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-admin-only-frontend-interface-to-upload-replace-explore-our-work-sample-images-for-each-category-business-card-logo-design-product-banner-photo-frame-for-all-12-slots-ensure-this-admin-ui-is-not-accessible-to-non-admin-users-hide-ui-and-block-actions",
+      "featureTitle": "Add an admin-only frontend interface to upload/replace Explore Our Work sample images for each category (Business Card, Logo Design, Product Banner, Photo Frame), for all 12 slots. Ensure this admin UI is not accessible to non-admin users (hide UI and block actions).",
+      "files": [
+        "frontend/src/components/admin/ExploreWorkSamplesAdminPanel.tsx",
+        "frontend/src/components/admin/ProductBannerSamplesAdminPanel.tsx",
+        "frontend/src/hooks/useShowcaseSamples.ts",
+        "frontend/src/pages/DashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

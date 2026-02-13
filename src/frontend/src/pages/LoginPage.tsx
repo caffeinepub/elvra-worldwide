@@ -9,7 +9,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (identity && !identity.getPrincipal().isAnonymous()) {
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/my-orders' });
     }
   }, [identity, navigate]);
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-serif font-bold mb-4">Welcome Back</h1>
           <p className="text-muted-foreground">
-            Sign in to access your dashboard and manage your projects.
+            Sign in to access your orders and manage your projects.
           </p>
         </div>
 
@@ -69,4 +69,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

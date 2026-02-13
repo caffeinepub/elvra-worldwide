@@ -1,9 +1,9 @@
 Deployment Marker - Product Banner Sample Images Replacement
-Timestamp: 2026-02-13T19:30:00Z
-Change: Replaced Sample 1-4 fallback images in /assets/generated/
+Timestamp: 2026-02-13T19:45:00Z
+Change: Replaced Sample 1-3 fallback images in /assets/generated/, Sample 4 intentionally blank
 Mapping:
-- sample1.dim_1200x800.jpg ← Screenshot_20260213-192911 (1).png
-- sample2.dim_1200x800.jpg ← Screenshot_20260213-192903 (1).png
-- sample3.dim_1200x800.jpg ← Screenshot_20260213-192858 (1).png
-- sample4.dim_1200x800.jpg ← Screenshot_20260213-192911 (1)-1.png
+- sample1.dim_1200x800.jpg ← Screenshot_20260213-192911 (1)-2.png (Creative Graphic Design)
+- sample2.dim_1200x800.jpg ← Screenshot_20260213-192903 (1)-2.png (App Development)
+- sample3.dim_1200x800.jpg ← Screenshot_20260213-192858 (1)-2.png (Winter Skincare)
+- sample4.dim_1200x800.jpg ← Intentionally blank (no fallback URL)
 Status: Ready for build and deployment
