@@ -13,7 +13,15 @@ export function useAddToCart(options?: UseAddToCartOptions) {
   return useMutation({
     mutationFn: async (input: AddToCartInput) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addToCart(input);
+      const orderId = await actor.addToCart(input);
+      
+      // Defensive check: ensure orderId is valid
+      if (!orderId || orderId === BigInt(0)) {
+        console.error('Invalid orderId returned from backend:', orderId);
+        throw new Error('Invalid order ID returned from backend');
+      }
+      
+      return orderId;
     },
     onSuccess: (orderId) => {
       queryClient.invalidateQueries({ queryKey: ['callerOrders'] });

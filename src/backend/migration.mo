@@ -1,14 +1,13 @@
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
-import Principal "mo:core/Principal";
 import List "mo:core/List";
+import Principal "mo:core/Principal";
 import Time "mo:core/Time";
 
 module {
   type Service = {
     id : Nat;
     name : Text;
-    priceRange : Text;
+    priceUSD : Nat;
     deliveryTime : Text;
   };
 
@@ -37,24 +36,9 @@ module {
     concentration : Text;
   };
 
-  type OrderStatus = { #pending; #confirmed; #shipped; #delivered; #cancelled };
-
-  type CustomerOrder = {
-    id : Nat;
-    owner : Principal;
-    name : Text;
-    email : Text;
-    phone : Text;
-    dob : Text;
-    gender : Gender;
-    selectedSample : Text;
-    orderStatus : OrderStatus;
-    timestamp : Time.Time;
-  };
-
   type ExpandedOrder = {
     id : Nat;
-    owner : Principal;
+    owner : Principal.Principal;
     name : Text;
     email : Text;
     phone : Text;
@@ -67,8 +51,24 @@ module {
     price : Text;
     deliveryTime : Text;
     orderStatus : OrderStatus;
-    paymentStatus : Text;
+    paymentStatus : PaymentStatus;
     timestamp : Time.Time;
+  };
+
+  type OrderStatus = {
+    #pending;
+    #confirmed;
+    #shipped;
+    #delivered;
+    #cancelled;
+  };
+
+  type PaymentStatus = {
+    #pending;
+    #paidSubmitted;
+    #verified;
+    #confirmed;
+    #failed;
   };
 
   type NotificationRequest = {
@@ -82,56 +82,46 @@ module {
     timestamp : Time.Time;
   };
 
+  type ConfirmationEmailRequest = {
+    customerEmail : Text;
+    confirmationMessageTemplate : Text;
+    orderId : Nat;
+    timestamp : Time.Time;
+  };
+
   type OldActor = {
     services : Map.Map<Nat, Service>;
-    supportRequests : Map.Map<Principal, List.List<SupportRequest>>;
-    userProfiles : Map.Map<Principal, UserProfile>;
+    supportRequests : Map.Map<Principal.Principal, List.List<SupportRequest>>;
+    userProfiles : Map.Map<Principal.Principal, UserProfile>;
     samples : Map.Map<Text, Sample>;
-    customerOrders : Map.Map<Nat, CustomerOrder>;
+    expandedOrders : Map.Map<Nat, ExpandedOrder>;
+    notificationRequests : Map.Map<Nat, NotificationRequest>;
+    confirmationEmailRequests : Map.Map<Nat, ConfirmationEmailRequest>;
     nextServiceId : Nat;
     nextOrderId : Nat;
+    nextNotificationId : Nat;
+    nextConfirmationEmailRequestId : Nat;
   };
 
   type NewActor = {
     services : Map.Map<Nat, Service>;
-    supportRequests : Map.Map<Principal, List.List<SupportRequest>>;
-    userProfiles : Map.Map<Principal, UserProfile>;
+    supportRequests : Map.Map<Principal.Principal, List.List<SupportRequest>>;
+    userProfiles : Map.Map<Principal.Principal, UserProfile>;
     samples : Map.Map<Text, Sample>;
     expandedOrders : Map.Map<Nat, ExpandedOrder>;
     notificationRequests : Map.Map<Nat, NotificationRequest>;
+    confirmationEmailRequests : Map.Map<Nat, ConfirmationEmailRequest>;
     nextServiceId : Nat;
     nextOrderId : Nat;
     nextNotificationId : Nat;
+    nextConfirmationEmailRequestId : Nat;
+    stripeConfiguration : ?{ secretKey : Text; allowedCountries : [Text] };
   };
 
   public func run(old : OldActor) : NewActor {
-    let expandedOrders = old.customerOrders.map<Nat, CustomerOrder, ExpandedOrder>(
-      func(_id, oldOrder) {
-        {
-          id = oldOrder.id;
-          owner = oldOrder.owner;
-          name = oldOrder.name;
-          email = oldOrder.email;
-          phone = oldOrder.phone;
-          dob = oldOrder.dob;
-          gender = oldOrder.gender;
-          product = "Unknown";
-          sampleSelected = oldOrder.selectedSample;
-          brandName = "Unknown";
-          description = "No description";
-          price = "0";
-          deliveryTime = "Unknown";
-          orderStatus = oldOrder.orderStatus;
-          paymentStatus = "Pending";
-          timestamp = oldOrder.timestamp;
-        };
-      }
-    );
     {
       old with
-      expandedOrders;
-      notificationRequests = Map.empty<Nat, NotificationRequest>();
-      nextNotificationId = 1;
+      stripeConfiguration = null;
     };
   };
 };

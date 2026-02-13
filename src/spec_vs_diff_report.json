@@ -1,34 +1,50 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-13T02:30:19.836Z",
-  "summary": "Frontend implements a two-step Internet Identity sign-up flow with Full Name + Email form, validation, and dashboard navigation. A new BasicProfile type and a frontend hook calling `actor.saveBasicProfile` were added. However, the diff summary truncation prevents confirming that the backend actually implements `saveBasicProfile` and that it persists into the existing `userProfiles` map without breaking existing profile methods. Additionally, a summary file describes multiple unrelated UI/route changes not requested.",
+  "generatedAt": "2026-02-13T12:40:58.818Z",
+  "summary": "Diff implements corrected product grid navigation to /products/* routes, restores add-to-cart→/payment/$orderId routing, adds Stripe Checkout initiation from PaymentPage via backend actor call, and adds a non-empty Order Confirmation page wired into the router and reached after payment success verification flow. Backend Stripe support and access-control requirements are only partially evidenced due to truncation of backend/main.mo (types/imports/migration shown, but required public methods and authorization checks are not visible in the diff summary).",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) in the existing `userProfiles` map keyed by `caller`, without breaking existing `getCallerUserProfile` / `saveCallerUserProfile` behavior.",
-      "reason": "Frontend calls `actor.saveBasicProfile(...)`, but the backend diff is truncated before showing any implementation of a `saveBasicProfile` method or confirming it writes into the existing `userProfiles` map while preserving existing behaviors.",
+      "id": "REQ-4",
+      "requirement": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
+      "reason": "The diff shows new Stripe-related types, imports, and a stable-state migration adding stripeConfiguration, but does not show the required backend public methods (admin-only set/update config; user-authorized create session for owned order; verify completed payment and update order status; ownership enforcement). Because backend/main.mo is truncated, these methods cannot be confirmed from the provided evidence.",
       "evidence": [
-        "frontend/src/hooks/useUserProfile.ts",
-        "backend/main.mo (truncated at `public shared ({ caller }) func save ...`)"
+        "backend/main.mo (truncated)",
+        "backend/migration.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Documentation/summary indicates many unrelated frontend changes (branding layout/header/footer, payment routes, OTP demo component, contact page rewrite, pricing page payment mentions, etc.) that were not requested as part of the sign-up/account creation flow work.",
-      "reason": "These changes are not part of REQ-1/REQ-2/REQ-3 and are only mentioned in the modified `frontend-file-summaries.txt`, suggesting scope creep (at least in documented changes).",
+      "description": "Added a dedicated Payment Failure/Cancelled page and route (/payment-failure) with retry and dashboard navigation.",
+      "reason": "The BuildRequest requirements focus on restoring product routes, end-to-end checkout, real Stripe payment, verification, and an order confirmation page. A payment-failure page/route is not requested explicitly in REQ-1..REQ-6.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/pages/PaymentFailurePage.tsx",
+        "frontend/src/App.tsx (paymentFailureRoute)"
       ]
     }
   ],
-  "confidence": 0.55,
+  "confidence": 0.64,
   "changed_files": [
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useUserProfile.ts",
-    "frontend/src/pages/SignUpPage.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/components/ProductAddToCartSection.tsx",
+    "frontend/src/hooks/useCreateCheckoutSession.ts",
+    "frontend/src/hooks/useStripeConfiguration.ts",
+    "frontend/src/hooks/useStripeVerification.ts",
+    "frontend/src/pages/BusinessCardPage.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/LogoDesignPage.tsx",
+    "frontend/src/pages/OrderConfirmationPage.tsx",
+    "frontend/src/pages/PaymentFailurePage.tsx",
+    "frontend/src/pages/PaymentPage.tsx",
+    "frontend/src/pages/PaymentSuccessPage.tsx",
+    "frontend/src/pages/PhotoFramePage.tsx",
+    "frontend/src/pages/ProductBannerPage.tsx",
+    "frontend/src/utils/stripeOrderMapping.ts",
+    "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]
 }

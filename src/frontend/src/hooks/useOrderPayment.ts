@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { PaymentStatus } from '../backend';
 
 export function useUpdateOrderPaymentStatus() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: bigint; status: string }) => {
+    mutationFn: async ({ orderId, status }: { orderId: bigint; status: PaymentStatus }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateOrderPaymentStatus(orderId, status);
     },

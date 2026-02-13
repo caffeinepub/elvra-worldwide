@@ -1,12 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthState } from '../hooks/useAuthState';
-import { useServices } from '../hooks/useServices';
 import ServiceCard from '../components/ServiceCard';
+import { PREMIUM_SERVICES } from '../constants/premiumServices';
 
 export default function ServicesPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthState();
-  const { data: services, isLoading } = useServices();
 
   const handleOrderNow = (serviceName: string) => {
     if (!isAuthenticated) {
@@ -14,12 +13,6 @@ export default function ServicesPage() {
     } else {
       navigate({ to: '/dashboard', search: { sample: serviceName } });
     }
-  };
-
-  const serviceIcons: Record<string, string> = {
-    'Business Card Design': '/assets/generated/business-card-icon.dim_256x256.png',
-    'Logo Design': '/assets/generated/logo-design-icon.dim_256x256.png',
-    'Photo Frame Design': '/assets/generated/photo-frame-icon.dim_256x256.png',
   };
 
   return (
@@ -32,33 +25,26 @@ export default function ServicesPage() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {services?.map((service) => (
-              <ServiceCard
-                key={service.id.toString()}
-                icon={serviceIcons[service.name]}
-                name={service.name}
-                priceRange={service.priceRange}
-                deliveryTime={service.deliveryTime}
-                action={
-                  <button
-                    onClick={() => handleOrderNow(service.name)}
-                    className="order-btn w-full"
-                  >
-                    Order Now
-                  </button>
-                }
-              />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          {PREMIUM_SERVICES.map((service) => (
+            <ServiceCard
+              key={service.name}
+              icon={service.icon}
+              name={service.name}
+              priceLabel={service.priceLabel}
+              deliveryTime={service.deliveryTime}
+              action={
+                <button
+                  onClick={() => handleOrderNow(service.name)}
+                  className="order-btn w-full"
+                >
+                  Order Now
+                </button>
+              }
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-

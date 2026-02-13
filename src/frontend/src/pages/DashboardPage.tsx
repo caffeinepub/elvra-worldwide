@@ -4,14 +4,19 @@ import { useServices } from '../hooks/useServices';
 import { useGetSupportRequests } from '../hooks/useSupport';
 import { useGetCallerUserProfile } from '../hooks/useUserProfile';
 import { useAddToCart, useGetCallerOrders } from '../hooks/useAddToCart';
+import { useIsCallerAdmin, useVerifyPaymentAndConfirmOrder } from '../hooks/useAdminOrderVerification';
 import ServiceCard from '../components/ServiceCard';
-import { Package, MessageSquare, User, ShoppingCart } from 'lucide-react';
+import { Package, MessageSquare, User, ShoppingCart, Truck, CheckCircle2, Clock, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gender, OrderStatus } from '../backend';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Gender, OrderStatus, PaymentStatus } from '../backend';
 import { validateDescription, countWords } from '../utils/validation';
+import { mapServiceToDisplay } from '../constants/premiumServices';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -19,6 +24,8 @@ export default function DashboardPage() {
   const { data: supportRequests } = useGetSupportRequests();
   const { data: userProfile } = useGetCallerUserProfile();
   const { data: orders } = useGetCallerOrders();
+  const { data: isAdmin, isLoading: isAdminLoading } = useIsCallerAdmin();
+  const verifyPaymentMutation = useVerifyPaymentAndConfirmOrder();
   
   const addToCartMutation = useAddToCart({
     onSuccess: (orderId) => {
@@ -42,106 +49,67 @@ export default function DashboardPage() {
     selectedSample: '',
     brandName: '',
     description: '',
+    price: '',
+    deliveryTime: '',
+    product: ''
   });
 
-  const [orderSelection, setOrderSelection] = useState<{
-    productName: string;
-    price: number;
-    delivery: string;
-  } | null>(null);
+  const [wordCount, setWordCount] = useState(0);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Prefill form with user profile data
   useEffect(() => {
-    if (userProfile) {
-      setFormData((prev) => ({
-        ...prev,
-        name: userProfile.fullName,
-        email: userProfile.email,
-        phone: userProfile.mobileNumber,
-        dob: userProfile.dob,
-        gender: userProfile.gender,
-      }));
-    }
-  }, [userProfile]);
+    setWordCount(countWords(formData.description));
+  }, [formData.description]);
 
-  // Handle URL search params for prefilling sample name and order selection
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sampleName = params.get('sample');
-    
-    // Check for order selection from sessionStorage
-    const storedSelection = sessionStorage.getItem('orderSelection');
-    if (storedSelection) {
-      try {
-        const selection = JSON.parse(storedSelection);
-        setOrderSelection(selection);
-        // Clear from sessionStorage after reading
-        sessionStorage.removeItem('orderSelection');
-        
-        // Scroll to order section after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-          document.getElementById('orderSection')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      } catch (e) {
-        console.error('Failed to parse order selection:', e);
-      }
-    }
-    
-    if (sampleName) {
-      setFormData((prev) => ({ ...prev, selectedSample: sampleName }));
-      // Only scroll to form if no order selection (to avoid double scroll)
-      if (!storedSelection) {
-        document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }, []);
-
-  const handleServiceOrder = (serviceName: string) => {
-    setFormData((prev) => ({ ...prev, selectedSample: serviceName }));
-    document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' });
+  const handleInputChange = (field: string, value: string | Gender) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  const handleServiceSelect = (service: any) => {
+    setFormData(prev => ({
+      ...prev,
+      product: service.name,
+      price: `$${service.priceUSD}`,
+      deliveryTime: service.deliveryTime
+    }));
+  };
 
+  const handleAddToCart = () => {
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      alert('Please enter your name');
+      return;
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      alert('Please enter your email');
+      return;
     }
-    if (!formData.selectedSample.trim()) {
-      newErrors.selectedSample = 'Sample name is required';
+    if (!formData.phone.trim()) {
+      alert('Please enter your phone number');
+      return;
+    }
+    if (!formData.dob.trim()) {
+      alert('Please enter your date of birth');
+      return;
     }
     if (!formData.gender) {
-      newErrors.gender = 'Gender is required';
+      alert('Please select your gender');
+      return;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate brand name
+    if (!formData.product) {
+      alert('Please select a service');
+      return;
+    }
+    if (!formData.selectedSample) {
+      alert('Please select a sample');
+      return;
+    }
     if (!formData.brandName.trim()) {
-      alert('Please enter your Shop / Brand Name');
+      alert('Please enter your brand name');
       return;
     }
 
-    // Validate description using shared validation
-    const descValidation = validateDescription(formData.description);
-    if (!descValidation.isValid) {
-      alert(descValidation.message);
-      return;
-    }
-
-    if (!validateForm()) {
+    const validationError = validateDescription(formData.description);
+    if (validationError) {
+      alert(validationError);
       return;
     }
 
@@ -151,167 +119,290 @@ export default function DashboardPage() {
       phone: formData.phone,
       dob: formData.dob,
       gender: formData.gender as Gender,
-      product: formData.selectedSample,
+      product: formData.product,
       sampleSelected: formData.selectedSample,
       brandName: formData.brandName,
       description: formData.description,
-      price: 'Depends on requirement',
-      deliveryTime: '3 Days',
+      price: formData.price,
+      deliveryTime: formData.deliveryTime
     });
   };
 
-  const serviceIcons: Record<string, string> = {
-    'Business Card Design': '/assets/generated/business-card-icon.dim_256x256.png',
-    'Logo Design': '/assets/generated/logo-design-icon.dim_256x256.png',
-    'Photo Frame Design': '/assets/generated/photo-frame-icon.dim_256x256.png',
+  const getOrderStatusBadge = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.pending:
+        return <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
+      case OrderStatus.confirmed:
+        return <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Confirmed</Badge>;
+      case OrderStatus.shipped:
+        return <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Shipped</Badge>;
+      case OrderStatus.delivered:
+        return <Badge variant="outline" className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">Delivered</Badge>;
+      case OrderStatus.cancelled:
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
-  const getOrderStatusLabel = (status: OrderStatus) => {
-    const statusMap: Record<OrderStatus, string> = {
-      [OrderStatus.pending]: 'Pending',
-      [OrderStatus.confirmed]: 'Confirmed',
-      [OrderStatus.shipped]: 'Shipped',
-      [OrderStatus.delivered]: 'Delivered',
-      [OrderStatus.cancelled]: 'Cancelled',
-    };
-    return statusMap[status] || status;
+  const getPaymentStatusBadge = (status: PaymentStatus) => {
+    switch (status) {
+      case PaymentStatus.pending:
+        return <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
+      case PaymentStatus.paidSubmitted:
+        return <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">Submitted</Badge>;
+      case PaymentStatus.verified:
+        return <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Verified</Badge>;
+      case PaymentStatus.confirmed:
+        return <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">Confirmed</Badge>;
+      case PaymentStatus.failed:
+        return <Badge variant="destructive">Failed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
-  const getOrderStatusColor = (status: OrderStatus) => {
-    const colorMap: Record<OrderStatus, string> = {
-      [OrderStatus.pending]: 'text-yellow-600',
-      [OrderStatus.confirmed]: 'text-blue-600',
-      [OrderStatus.shipped]: 'text-purple-600',
-      [OrderStatus.delivered]: 'text-green-600',
-      [OrderStatus.cancelled]: 'text-red-600',
-    };
-    return colorMap[status] || 'text-muted-foreground';
+  const canTrackOrder = (order: any) => {
+    return order.paymentStatus === PaymentStatus.verified && order.orderStatus === OrderStatus.confirmed;
   };
 
-  const wordCount = countWords(formData.description);
+  const handleVerifyPayment = async (orderId: bigint) => {
+    if (confirm('Are you sure you want to verify this payment and confirm the order?')) {
+      try {
+        await verifyPaymentMutation.mutateAsync(orderId);
+        alert('Payment verified and order confirmed successfully!');
+      } catch (error) {
+        alert('Failed to verify payment. Please try again.');
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen py-16 md:py-24">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Dashboard</h1>
-          {userProfile && (
-            <p className="text-lg text-muted-foreground">Welcome back, {userProfile.fullName}</p>
-          )}
+          <p className="text-lg text-muted-foreground">
+            Welcome back, {userProfile?.fullName || 'User'}! Manage your orders and profile.
+          </p>
         </div>
 
-        {/* Order Selection Summary Section */}
-        {orderSelection && (
-          <div id="orderSection" className="mb-12 scroll-mt-24">
-            <h2>Order This Product</h2>
-
-            <p><strong>Product:</strong> <span id="selectedProduct">{orderSelection.productName}</span></p>
-            <p><strong>Price:</strong> <span id="selectedPrice">${orderSelection.price}</span></p>
-            <p><strong>Delivery Time:</strong> <span id="selectedDelivery">{orderSelection.delivery}</span></p>
-          </div>
+        {/* Admin Section */}
+        {isAdmin && (
+          <Card className="mb-8 border-primary/30 shadow-luxury">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Admin: Payment Verification
+              </CardTitle>
+              <CardDescription>
+                Verify payments and confirm orders for customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {orders && orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders
+                    .filter(order => order.paymentStatus === PaymentStatus.paidSubmitted)
+                    .map((order) => (
+                      <Card key={order.id.toString()} className="border-blue-200 dark:border-blue-800">
+                        <CardContent className="pt-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">Order #{order.id.toString()}</p>
+                                {getPaymentStatusBadge(order.paymentStatus)}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Customer: {order.name} | Product: {order.product}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Email: {order.email} | Phone: {order.phone}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => handleVerifyPayment(order.id)}
+                              disabled={verifyPaymentMutation.isPending}
+                              className="shadow-luxury"
+                            >
+                              {verifyPaymentMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Verifying...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  Verify & Confirm
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  {orders.filter(order => order.paymentStatus === PaymentStatus.paidSubmitted).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No orders awaiting verification
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No orders to display
+                </p>
+              )}
+            </CardContent>
+          </Card>
         )}
 
+        {/* My Orders Section */}
+        <Card className="mb-8 shadow-luxury">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              My Orders
+            </CardTitle>
+            <CardDescription>View and track your orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {orders && orders.length > 0 ? (
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <Card key={order.id.toString()} className="border-muted">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium">Order #{order.id.toString()}</p>
+                            {getOrderStatusBadge(order.orderStatus)}
+                            {getPaymentStatusBadge(order.paymentStatus)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {order.product} - {order.sampleSelected}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Price: {order.price} | Delivery: {order.deliveryTime}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {canTrackOrder(order) ? (
+                            <Button
+                              onClick={() => navigate({ to: '/track-order/$orderId', params: { orderId: order.id.toString() } })}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Truck className="mr-2 h-4 w-4" />
+                              Track Order
+                            </Button>
+                          ) : (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Tracking available after verification</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No orders yet. Start by selecting a service below!
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Services Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <Package className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">Available Services</h2>
-          </div>
+        <Card className="mb-8 shadow-luxury">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              Available Services
+            </CardTitle>
+            <CardDescription>Select a service to get started</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {servicesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {services?.map((service) => {
+                  const displayInfo = mapServiceToDisplay(service.name);
+                  return (
+                    <div key={service.id.toString()} onClick={() => handleServiceSelect(service)}>
+                      <ServiceCard
+                        icon={displayInfo?.icon}
+                        name={service.name}
+                        priceLabel={displayInfo?.priceLabel || `$${service.priceUSD}`}
+                        deliveryTime={service.deliveryTime}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          {servicesLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {services?.map((service) => (
-                <ServiceCard
-                  key={service.id.toString()}
-                  icon={serviceIcons[service.name]}
-                  name={service.name}
-                  priceRange={service.priceRange}
-                  deliveryTime={service.deliveryTime}
-                  action={
-                    <button
-                      onClick={() => handleServiceOrder(service.name)}
-                      className="w-full px-4 py-2 text-sm font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      Order Service
-                    </button>
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Add to Cart Form */}
-        <section className="mb-12" id="order-form">
-          <div className="flex items-center gap-3 mb-6">
-            <ShoppingCart className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">Add to Cart</h2>
-          </div>
-
-          <div className="bg-card border border-border rounded-lg p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
-                  </Label>
+        {/* Order Form */}
+        {formData.product && (
+          <Card className="mb-8 shadow-luxury border-primary/20">
+            <CardHeader>
+              <CardTitle>Order Details</CardTitle>
+              <CardDescription>Fill in your order information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={errors.name ? 'border-destructive' : ''}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter your full name"
                   />
-                  {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
                 </div>
 
-                <div>
-                  <Label htmlFor="email">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={errors.email ? 'border-destructive' : ''}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="Enter your email"
                   />
-                  {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                 </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="Enter your phone number"
                   />
                 </div>
 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="dob">Date of Birth</Label>
                   <Input
                     id="dob"
                     type="date"
                     value={formData.dob}
-                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                    onChange={(e) => handleInputChange('dob', e.target.value)}
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="gender">
-                    Gender <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
-                  >
-                    <SelectTrigger id="gender" className={errors.gender ? 'border-destructive' : ''}>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value as Gender)}>
+                    <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -320,206 +411,169 @@ export default function DashboardPage() {
                       <SelectItem value={Gender.other}>Other</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.gender && <p className="text-sm text-destructive mt-1">{errors.gender}</p>}
                 </div>
 
-                <div>
-                  <Label htmlFor="selectedSample">
-                    Sample Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="selectedSample"
-                    type="text"
-                    value={formData.selectedSample}
-                    onChange={(e) => setFormData({ ...formData, selectedSample: e.target.value })}
-                    className={errors.selectedSample ? 'border-destructive' : ''}
-                  />
-                  {errors.selectedSample && (
-                    <p className="text-sm text-destructive mt-1">{errors.selectedSample}</p>
-                  )}
+                <div className="space-y-2">
+                  <Label htmlFor="sample">Select Sample</Label>
+                  <Select value={formData.selectedSample} onValueChange={(value) => handleInputChange('selectedSample', value)}>
+                    <SelectTrigger id="sample">
+                      <SelectValue placeholder="Choose a sample" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sample 1">Sample 1</SelectItem>
+                      <SelectItem value="Sample 2">Sample 2</SelectItem>
+                      <SelectItem value="Sample 3">Sample 3</SelectItem>
+                      <SelectItem value="Sample 4">Sample 4</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="brandName">
-                  Shop / Brand Name <span className="text-destructive">*</span>
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="brandName">Brand Name</Label>
                 <Input
                   id="brandName"
-                  type="text"
-                  placeholder="Enter your Shop / Brand Name"
                   value={formData.brandName}
-                  onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                  onChange={(e) => handleInputChange('brandName', e.target.value)}
+                  placeholder="Enter your brand name"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="description">Detailed Description</Label>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
                 <textarea
                   id="description"
-                  placeholder="Describe your requirement (up to 1000 words)"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={6}
-                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Describe your requirements (max 1000 words)"
+                  className="w-full min-h-[120px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
-                <p id="wordCount" className="text-sm text-muted-foreground mt-1">
-                  {wordCount} / 1000
+                <p className="text-sm text-muted-foreground">
+                  {wordCount} / 1000 words
                 </p>
               </div>
 
-              <Button type="submit" disabled={addToCartMutation.isPending} className="w-full md:w-auto">
-                {addToCartMutation.isPending ? 'Adding to Cart...' : 'Add to Cart & Proceed'}
-              </Button>
-            </form>
-          </div>
-        </section>
+              <Separator />
 
-        {/* Checkout Section (hidden by default, revealed after successful add-to-cart) */}
-        <section id="checkoutSection" style={{ display: 'none' }} className="mb-12 scroll-mt-24">
-          <div className="bg-card border border-border rounded-lg p-8">
-            <h2 className="text-2xl font-serif font-bold mb-4">Checkout</h2>
-            <p className="text-muted-foreground">
-              Your order has been added to cart. Proceeding to payment...
-            </p>
-          </div>
-        </section>
-
-        {/* My Orders Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <Package className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">My Orders</h2>
-          </div>
-
-          {orders && orders.length > 0 ? (
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id.toString()} className="bg-card border border-border rounded-lg p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="font-medium">#{order.id.toString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Product</p>
-                      <p className="font-medium">{order.product}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Brand Name</p>
-                      <p className="font-medium">{order.brandName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Sample Selected</p>
-                      <p className="font-medium">{order.sampleSelected}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Order Status</p>
-                      <p className={`font-medium ${getOrderStatusColor(order.orderStatus)}`}>
-                        {getOrderStatusLabel(order.orderStatus)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Payment Status</p>
-                      <p className="font-medium">{order.paymentStatus}</p>
-                    </div>
-                  </div>
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <p className="text-sm font-medium">Order Summary</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Service:</span>
+                  <span className="font-medium">{formData.product}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-lg p-8 text-center">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No orders yet</p>
-            </div>
-          )}
-        </section>
-
-        {/* Support Requests Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">My Support Requests</h2>
-          </div>
-
-          {supportRequests && supportRequests.length > 0 ? (
-            <div className="space-y-4">
-              {supportRequests.map((request, index) => (
-                <div key={index} className="bg-card border border-border rounded-lg p-6">
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Name</p>
-                      <p className="font-medium">{request.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{request.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Message</p>
-                      <p className="font-medium">{request.message}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Submitted</p>
-                      <p className="font-medium">
-                        {new Date(Number(request.timestamp) / 1000000).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Price:</span>
+                  <span className="font-medium text-primary">{formData.price}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-lg p-8 text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No support requests yet</p>
-            </div>
-          )}
-        </section>
-
-        {/* User Profile Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <User className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-serif font-bold">My Profile</h2>
-          </div>
-
-          {userProfile ? (
-            <div className="bg-card border border-border rounded-lg p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Full Name</p>
-                  <p className="font-medium">{userProfile.fullName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{userProfile.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Mobile Number</p>
-                  <p className="font-medium">{userProfile.mobileNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date of Birth</p>
-                  <p className="font-medium">{userProfile.dob}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Gender</p>
-                  <p className="font-medium capitalize">{userProfile.gender}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Verification Status</p>
-                  <p className="font-medium">{userProfile.isVerified ? 'Verified' : 'Not Verified'}</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Delivery:</span>
+                  <span className="font-medium">{formData.deliveryTime}</span>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-card border border-border rounded-lg p-8 text-center">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No profile information available</p>
-            </div>
-          )}
-        </section>
+
+              <Button
+                onClick={handleAddToCart}
+                disabled={addToCartMutation.isPending}
+                className="w-full shadow-luxury"
+                size="lg"
+              >
+                {addToCartMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Add to Cart & Proceed to Payment
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Support Requests Section */}
+        <Card className="mb-8 shadow-luxury">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              Support Requests
+            </CardTitle>
+            <CardDescription>Your support request history</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {supportRequests && supportRequests.length > 0 ? (
+              <div className="space-y-4">
+                {supportRequests.map((request, index) => (
+                  <Card key={index} className="border-muted">
+                    <CardContent className="pt-6">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">{request.name}</p>
+                        <p className="text-sm text-muted-foreground">{request.email}</p>
+                        <p className="text-sm">{request.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(Number(request.timestamp) / 1000000).toLocaleString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No support requests yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* User Profile Section */}
+        <Card className="shadow-luxury">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              Profile Information
+            </CardTitle>
+            <CardDescription>Your account details</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {userProfile ? (
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Full Name:</span>
+                  <span className="text-sm font-medium">{userProfile.fullName}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Email:</span>
+                  <span className="text-sm font-medium">{userProfile.email}</span>
+                </div>
+                {userProfile.mobileNumber && (
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Mobile:</span>
+                    <span className="text-sm font-medium">{userProfile.mobileNumber}</span>
+                  </div>
+                )}
+                {userProfile.dob && (
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Date of Birth:</span>
+                    <span className="text-sm font-medium">{userProfile.dob}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-2">
+                  <span className="text-sm text-muted-foreground">Verification Status:</span>
+                  <Badge variant={userProfile.isVerified ? "default" : "outline"}>
+                    {userProfile.isVerified ? "Verified" : "Not Verified"}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No profile information available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

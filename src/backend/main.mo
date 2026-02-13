@@ -1,26 +1,31 @@
-import Array "mo:core/Array";
 import Iter "mo:core/Iter";
+import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
-import Principal "mo:core/Principal";
+import OutCall "http-outcalls/outcall";
+import Stripe "stripe/stripe";
 import Order "mo:core/Order";
 import List "mo:core/List";
+import Principal "mo:core/Principal";
+import Migration "migration";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Apply migration in with clause
+(with migration = Migration.run)
 actor {
-  // Types
+  // ==== Types ====
   public type Service = {
     id : Nat;
     name : Text;
-    priceRange : Text;
+    priceUSD : Nat;
     deliveryTime : Text;
   };
-
   module Service {
     public func compare(s1 : Service, s2 : Service) : Order.Order {
       Nat.compare(s1.id, s2.id);
@@ -33,7 +38,6 @@ actor {
     email : Text;
     message : Text;
   };
-
   module SupportRequest {
     public func compare(r1 : SupportRequest, r2 : SupportRequest) : Order.Order {
       Int.compare(r1.timestamp, r2.timestamp);
@@ -58,6 +62,14 @@ actor {
     concentration : Text;
   };
 
+  public type ShoppingItem = {
+    currency : Text;
+    productName : Text;
+    productDescription : Text;
+    priceInCents : Nat;
+    quantity : Nat;
+  };
+
   public type ExpandedOrder = {
     id : Nat;
     owner : Principal;
@@ -73,7 +85,7 @@ actor {
     price : Text;
     deliveryTime : Text;
     orderStatus : OrderStatus;
-    paymentStatus : Text;
+    paymentStatus : PaymentStatus;
     timestamp : Time.Time;
   };
 
@@ -83,6 +95,14 @@ actor {
     #shipped;
     #delivered;
     #cancelled;
+  };
+
+  public type PaymentStatus = {
+    #pending;
+    #paidSubmitted;
+    #verified;
+    #confirmed;
+    #failed;
   };
 
   public type BasicProfile = {
@@ -121,44 +141,74 @@ actor {
     deliveryTime : Text;
   };
 
-  // State
+  public type ConfirmationEmailRequest = {
+    customerEmail : Text;
+    confirmationMessageTemplate : Text;
+    orderId : Nat;
+    timestamp : Time.Time;
+  };
+
+  // Stripe Types
+  public type StripeConfiguration = {
+    secretKey : Text;
+    allowedCountries : [Text];
+  };
+
+  public type PaymentIntent = {
+    id : Text;
+    amount : Nat;
+    currency : Text;
+    status : Text;
+  };
+
+  public type CheckoutSession = {
+    id : Text;
+    url : Text;
+    payment_intent : Text;
+    payment_intent_id : Text;
+  };
+
+  // ==== State ====
   let services = Map.empty<Nat, Service>();
   let supportRequests = Map.empty<Principal, List.List<SupportRequest>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   let samples = Map.empty<Text, Sample>();
   let expandedOrders = Map.empty<Nat, ExpandedOrder>();
   let notificationRequests = Map.empty<Nat, NotificationRequest>();
-
-  // Initialize authorization
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
+  let confirmationEmailRequests = Map.empty<Nat, ConfirmationEmailRequest>();
 
   var nextServiceId = 1;
   var nextOrderId = 1;
   var nextNotificationId = 1;
+  var nextConfirmationEmailRequestId = 1;
+  var stripeConfiguration : ?StripeConfiguration = null;
 
-  // Add Service
-  public shared ({ caller }) func addService(name : Text, priceRange : Text, deliveryTime : Text) : async Nat {
+  // ==== Initialize authorization ====
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
+  // ==== Add Service ====
+  public shared ({ caller }) func addService(
+    name : Text,
+    priceUSD : Nat,
+    deliveryTime : Text,
+  ) : async Nat {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can add services");
     };
     let id = nextServiceId;
-    let service : Service = {
-      id;
-      name;
-      priceRange;
-      deliveryTime;
-    };
+    let service : Service = { id; name; priceUSD; deliveryTime };
     services.add(id, service);
     nextServiceId += 1;
     id;
   };
 
+  // Services should be viewable by anyone (including guests) for browsing
   public query func getServices() : async [Service] {
     services.values().toArray().sort();
   };
 
-  // User Profile Functions
+  // ==== User Profile Functions ====
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -180,7 +230,7 @@ actor {
     userProfiles.get(user);
   };
 
-  // Basic Profile Flow for Account Creation
+  // ==== Basic Profile Flow for Account Creation ====
   public shared ({ caller }) func saveBasicProfile(basicProfile : BasicProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create basic profiles");
@@ -196,7 +246,7 @@ actor {
     userProfiles.add(caller, extendedProfile);
   };
 
-  // Support Requests
+  // ==== Support Requests ====
   public shared ({ caller }) func submitSupportRequest(name : Text, email : Text, message : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can submit support requests");
@@ -225,7 +275,7 @@ actor {
     };
   };
 
-  // Sample Management
+  // ==== Sample Management ====
   public shared ({ caller }) func addSample(
     sampleName : Text,
     description : Text,
@@ -244,14 +294,12 @@ actor {
     samples.add(sampleName, sample);
   };
 
-  public query ({ caller }) func getSamples() : async [Sample] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view samples");
-    };
+  // Samples should be viewable by anyone (including guests) for product selection
+  public query func getSamples() : async [Sample] {
     samples.values().toArray();
   };
 
-  // Updated Add to Cart (Create Expanded Order)
+  // ==== Updated Add to Cart (Create Expanded Order) ====
   public shared ({ caller }) func addToCart(input : AddToCartInput) : async Nat {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create orders");
@@ -272,31 +320,60 @@ actor {
       price = input.price;
       deliveryTime = input.deliveryTime;
       orderStatus = #pending;
-      paymentStatus = "Pending";
+      paymentStatus = #pending;
       timestamp = Time.now();
     };
     expandedOrders.add(id, order);
     nextOrderId += 1;
-
-    // Store notification request
-    let notificationId = nextNotificationId;
-    let request : NotificationRequest = {
-      name = input.name;
-      email = input.email;
-      phone = input.phone;
-      product = input.product;
-      sample = input.sampleSelected;
-      brandName = input.brandName;
-      description = input.description;
-      timestamp = Time.now();
-    };
-    notificationRequests.add(notificationId, request);
-    nextNotificationId += 1;
-
     id;
   };
 
-  public shared ({ caller }) func updateOrderPaymentStatus(orderId : Nat, status : Text) : async () {
+  // ==== Stripe Payment Integration (New Section) ====
+
+  // Configure Stripe (Admin Only)
+  public shared ({ caller }) func setStripeConfiguration(config : Stripe.StripeConfiguration) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can configure Stripe");
+    };
+    stripeConfiguration := ?config;
+  };
+
+  // Get Stripe configuration (internal function)
+  func getStripeConfiguration() : StripeConfiguration {
+    switch (stripeConfiguration) {
+      case (null) { Runtime.trap("Stripe needs to be first configured") };
+      case (?value) { value };
+    };
+  };
+
+  // Check if Stripe is configured
+  public query func isStripeConfigured() : async Bool {
+    stripeConfiguration != null;
+  };
+
+  // Get Stripe session status - requires user authentication
+  public shared ({ caller }) func getStripeSessionStatus(sessionId : Text) : async Stripe.StripeSessionStatus {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check Stripe session status");
+    };
+    await Stripe.getSessionStatus(getStripeConfiguration(), sessionId, transform);
+  };
+
+  // Create Stripe checkout session - requires user authentication
+  public shared ({ caller }) func createCheckoutSession(items : [ShoppingItem], successUrl : Text, cancelUrl : Text) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create checkout sessions");
+    };
+    await Stripe.createCheckoutSession(getStripeConfiguration(), caller, items, successUrl, cancelUrl, transform);
+  };
+
+  // Transform function for Stripe
+  public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
+    OutCall.transform(input);
+  };
+
+  // ==== Payment and Order Status Updates ====
+  public shared ({ caller }) func updateOrderPaymentStatus(orderId : Nat, status : PaymentStatus) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can update payment status");
     };
@@ -305,11 +382,53 @@ actor {
         Runtime.trap("Order not found");
       };
       case (?order) {
-        if (order.owner != caller and not AccessControl.isAdmin(accessControlState, caller)) {
+        // Users can only update their own orders
+        if (order.owner != caller) {
           Runtime.trap("Unauthorized: Can only update payment status for your own orders");
         };
-        let updatedOrder = { order with paymentStatus = status };
-        expandedOrders.add(orderId, updatedOrder);
+        // Users can only set status to #paidSubmitted (indicating they submitted payment)
+        switch (status) {
+          case (#paidSubmitted) {
+            let updatedOrder = {
+              order with
+              paymentStatus = #paidSubmitted;
+              orderStatus = #confirmed;
+            };
+            expandedOrders.add(orderId, updatedOrder);
+          };
+          case (_) {
+            Runtime.trap("Unauthorized: Users can only mark orders as paidSubmitted. Other payment status changes require admin verification.");
+          };
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func submitConfirmationEmailRequest(orderId : Nat, customerEmail : Text, confirmationMessageTemplate : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can submit email confirmation requests");
+    };
+    switch (expandedOrders.get(orderId)) {
+      case (null) {
+        Runtime.trap("Order not found");
+      };
+      case (?order) {
+        if (order.owner != caller) {
+          Runtime.trap("Unauthorized: Can only submit confirmation requests for your own orders");
+        };
+        if (order.paymentStatus == #paidSubmitted) {
+          let requestId = nextConfirmationEmailRequestId;
+          let request : ConfirmationEmailRequest = {
+            customerEmail;
+            confirmationMessageTemplate;
+            orderId;
+            timestamp = Time.now();
+          };
+          confirmationEmailRequests.add(requestId, request);
+          nextConfirmationEmailRequestId += 1;
+        } else {
+          Runtime.trap("Order must have payment status 'paidSubmitted' to submit confirmation email request");
+        };
       };
     };
   };
@@ -332,6 +451,47 @@ actor {
     ).sort();
   };
 
+  // ==== New: Admin-Only Payment Verification + Confirmation ====
+  public shared ({ caller }) func verifyPaymentAndConfirmOrder(orderId : Nat) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can verify payments and confirm orders");
+    };
+
+    switch (expandedOrders.get(orderId)) {
+      case (null) {
+        Runtime.trap("Order not found");
+      };
+      case (?order) {
+        if (order.paymentStatus == #paidSubmitted) {
+          let updatedOrder = {
+            order with
+            paymentStatus = #verified;
+            orderStatus = #confirmed;
+          };
+          expandedOrders.add(orderId, updatedOrder);
+
+          // Store notification request
+          let notificationId = nextNotificationId;
+          let request : NotificationRequest = {
+            name = order.name;
+            email = order.email;
+            phone = order.phone;
+            product = order.product;
+            sample = order.sampleSelected;
+            brandName = order.brandName;
+            description = order.description;
+            timestamp = Time.now();
+          };
+          notificationRequests.add(notificationId, request);
+          nextNotificationId += 1;
+        } else {
+          Runtime.trap("Order is not in a state that can be verified and confirmed");
+        };
+      };
+    };
+  };
+
+  // ==== Order Status Management ====
   public shared ({ caller }) func updateOrderStatus(orderId : Nat, status : OrderStatus) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can update order status");
@@ -356,7 +516,7 @@ actor {
     ).sort();
   };
 
-  // Admin-only functions to manage notification requests
+  // ==== Admin-only functions to manage notification requests ====
   public query ({ caller }) func getAllNotificationRequests() : async [NotificationRequest] {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admin can view notification requests");
@@ -369,5 +529,21 @@ actor {
       Runtime.trap("Unauthorized: Only admin can delete notification requests");
     };
     notificationRequests.remove(id);
+  };
+
+  // ==== Admin-only functions to manage confirmation email requests ====
+  public query ({ caller }) func getAllConfirmationEmailRequests() : async [ConfirmationEmailRequest] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can view confirmation email requests");
+    };
+    confirmationEmailRequests.values().toArray();
+  };
+
+  // Deprecated, replaced by confirmation email flow
+  public query ({ caller }) func getConfirmationMessageTemplate() : async Text {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admin can get confirmation message template");
+    };
+    "Thank you for your order, {customer_name}! Your order ID is {order_id}. ...";
   };
 };

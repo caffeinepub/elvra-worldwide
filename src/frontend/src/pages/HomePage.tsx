@@ -1,15 +1,29 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useAuthState } from '../hooks/useAuthState';
 import ServiceCard from '../components/ServiceCard';
 import { ArrowRight } from 'lucide-react';
+import { PREMIUM_SERVICES } from '../constants/premiumServices';
+import { useEffect } from 'react';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuthState();
   const navigate = useNavigate();
+  const search = useSearch({ from: '/' });
+
+  // Handle scroll on mount if scrollTo param is present
+  useEffect(() => {
+    if (search && 'scrollTo' in search && search.scrollTo === 'premium-services') {
+      setTimeout(() => {
+        const section = document.getElementById('premium-services');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [search]);
 
   const openOrder = (productName: string, price: number, delivery: string) => {
     if (isAuthenticated) {
-      // Store order details in sessionStorage for Dashboard to read
       sessionStorage.setItem('orderSelection', JSON.stringify({
         productName,
         price,
@@ -25,46 +39,15 @@ export default function HomePage() {
     }
   };
 
-  const services = [
-    {
-      name: 'Business Card Design',
-      priceRange: '$30 – $50',
-      deliveryTime: 'Delivery: 3 Business Days',
-      icon: '/assets/generated/business-card-icon.dim_256x256.png',
-      price: 30
-    },
-    {
-      name: 'Logo Design',
-      priceRange: '$40–$80',
-      deliveryTime: 'Delivery 3 Days',
-      icon: '/assets/generated/logo-design-icon.dim_256x256.png',
-      price: 40
-    },
-    {
-      name: 'Photo Frame Design',
-      priceRange: '$10–$15',
-      deliveryTime: 'Delivery 3 Days',
-      icon: '/assets/generated/photo-frame-icon.dim_256x256.png',
-      price: 10
-    },
-    {
-      name: 'Product Banner Design',
-      priceRange: '$25–$60',
-      deliveryTime: 'Delivery: 3 Business Days',
-      icon: '/product-banner.jpg',
-      price: 25
-    }
-  ];
-
   const products = [
-    { name: 'Business Card', page: '/business-card', banner: '/assets/generated/banner1.dim_1600x900.jpg' },
-    { name: 'Logo Design', page: '/logo-design', banner: '/assets/generated/banner2.dim_1600x900.jpg' },
-    { name: 'Product Banner', page: '/product-banner', banner: '/assets/generated/banner3.dim_1600x900.jpg' },
-    { name: 'Photo Frame', page: '/photo-frame', banner: '/assets/generated/banner4.dim_1600x900.jpg' },
+    { name: 'Business Card', page: '/products/business-card', banner: '/assets/generated/banner1.dim_1600x900.jpg' },
+    { name: 'Logo Design', page: '/products/logo-design', banner: '/assets/generated/banner2.dim_1600x900.jpg' },
+    { name: 'Product Banner', page: '/products/product-banner', banner: '/assets/generated/banner3.dim_1600x900.jpg' },
+    { name: 'Photo Frame', page: '/products/photo-frame', banner: '/assets/generated/banner4.dim_1600x900.jpg' },
   ];
 
   const scrollToServices = () => {
-    const section = document.getElementById('premium-services-old');
+    const section = document.getElementById('premium-services');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth' });
     }
@@ -84,7 +67,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background"></div>
         <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center animate-fade-in">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-balance">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 text-balance text-white">
               Designing Brands Worldwide
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -109,8 +92,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="premium-services-old" className="py-16 md:py-24 bg-card/50">
+      {/* Services Section - SINGLE INSTANCE */}
+      <section id="premium-services" className="py-16 md:py-24 bg-card/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Premium Services</h2>
@@ -119,16 +102,16 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {services.map((service) => (
+            {PREMIUM_SERVICES.map((service) => (
               <ServiceCard
                 key={service.name}
                 icon={service.icon}
                 name={service.name}
-                priceRange={service.priceRange}
+                priceLabel={service.priceLabel}
                 deliveryTime={service.deliveryTime}
                 action={
                   <button
-                    onClick={() => openOrder(service.name, service.price, service.deliveryTime)}
+                    onClick={() => openOrder(service.name, service.priceUSD, service.deliveryTime)}
                     className="order-btn w-full"
                   >
                     Order Now
@@ -144,7 +127,7 @@ export default function HomePage() {
       <section id="products" className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Premium Services</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Explore Our Work</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Discover our range of premium design products crafted with excellence.
             </p>

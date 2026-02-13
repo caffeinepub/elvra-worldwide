@@ -1,151 +1,286 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useAddToCart } from '../hooks/useAddToCart';
+import { useAuthState } from '../hooks/useAuthState';
 import ProductSampleSelector from './ProductSampleSelector';
 import ProductOrderFormFields from './ProductOrderFormFields';
-import { useAuthState } from '../hooks/useAuthState';
-import { useGetCallerUserProfile } from '../hooks/useUserProfile';
-import { useAddToCart } from '../hooks/useAddToCart';
-import { Gender, type AddToCartInput } from '../backend';
-import { validateDescription } from '../utils/validation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, ShoppingCart, AlertCircle, ArrowRight } from 'lucide-react';
+import { Gender } from '../backend';
+import { validateEmail, validateDescription } from '../utils/validation';
 
 interface ProductAddToCartSectionProps {
   productName: string;
+  price: string;
+  deliveryTime: string;
 }
 
-export default function ProductAddToCartSection({ productName }: ProductAddToCartSectionProps) {
+export default function ProductAddToCartSection({
+  productName,
+  price,
+  deliveryTime,
+}: ProductAddToCartSectionProps) {
   const navigate = useNavigate();
-  const { isAuthenticated, isInitializing } = useAuthState();
-  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
-  
-  const [selectedSample, setSelectedSample] = useState('');
-  const [brandName, setBrandName] = useState('');
-  const [description, setDescription] = useState('');
+  const { isAuthenticated } = useAuthState();
+  const addToCartMutation = useAddToCart();
 
-  const addToCartMutation = useAddToCart({
-    onSuccess: (orderId) => {
-      // Reveal and scroll to checkout section
-      const checkoutSection = document.getElementById('checkoutSection');
-      if (checkoutSection) {
-        checkoutSection.style.display = 'block';
-        checkoutSection.scrollIntoView({ behavior: 'smooth' });
-      }
-      
-      navigate({ to: '/payment/$orderId', params: { orderId: orderId.toString() } });
-    }
+  const [step, setStep] = useState<'sample' | 'form'>('sample');
+  const [selectedSample, setSelectedSample] = useState<string>('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    dob: '',
+    gender: Gender.other,
+    brandName: '',
+    description: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string>('');
 
-  const handleAddToCart = () => {
-    // Validation
-    if (!selectedSample) {
-      alert('Please select a sample');
-      return;
-    }
-
-    if (!brandName.trim()) {
-      alert('Please enter your Shop / Brand Name');
-      return;
-    }
-
-    const descValidation = validateDescription(description);
-    if (!descValidation.isValid) {
-      alert(descValidation.message);
-      return;
-    }
-
-    // Prepare payload
-    const input: AddToCartInput = {
-      product: productName,
-      sampleSelected: selectedSample,
-      brandName: brandName.trim(),
-      description: description.trim(),
-      price: 'Depends on requirement',
-      deliveryTime: '3 Days',
-      name: userProfile?.fullName || '',
-      email: userProfile?.email || '',
-      phone: userProfile?.mobileNumber || '',
-      dob: userProfile?.dob || '',
-      gender: userProfile?.gender || Gender.male,
-    };
-
-    addToCartMutation.mutate(input);
+  const handleSampleSelect = (sample: string) => {
+    setSelectedSample(sample);
   };
 
-  if (isInitializing || profileLoading) {
-    return (
-      <div className="bg-card border border-border rounded-lg p-8 shadow-luxury">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
+  const handleContinue = () => {
+    if (!isAuthenticated) {
+      navigate({ to: '/login' });
+      return;
+    }
+    if (selectedSample) {
+      setStep('form');
+    }
+  };
 
-  if (!isAuthenticated) {
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!formData.dob.trim()) newErrors.dob = 'Date of birth is required';
+    if (!formData.brandName.trim()) newErrors.brandName = 'Brand name is required';
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else {
+      const descValidation = validateDescription(formData.description);
+      if (!descValidation.isValid) {
+        newErrors.description = descValidation.message || 'Description is invalid';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const orderId = await addToCartMutation.mutateAsync({
+        ...formData,
+        product: productName,
+        sampleSelected: selectedSample,
+        price,
+        deliveryTime,
+      });
+
+      if (!orderId || orderId === BigInt(0)) {
+        setSubmitError('Failed to create order. Please try again.');
+        return;
+      }
+
+      navigate({ to: '/payment/$orderId', params: { orderId: orderId.toString() } });
+    } catch (error: any) {
+      console.error('Order creation error:', error);
+      setSubmitError(error.message || 'Failed to create order. Please try again.');
+    }
+  };
+
+  if (step === 'sample') {
     return (
-      <div className="bg-card border border-border rounded-lg p-8 shadow-luxury">
-        <h2 className="text-2xl font-serif font-bold mb-4">Order This Product</h2>
-        <p className="text-muted-foreground mb-6">
-          Please log in or sign up to place an order for this product.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
+      <Card className="shadow-luxury">
+        <CardHeader>
+          <CardTitle>Select Your Sample</CardTitle>
+          <CardDescription>Choose the design sample you prefer</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ProductSampleSelector
+            selectedSample={selectedSample}
+            onSelectSample={handleSampleSelect}
+          />
+
           <Button
-            onClick={() => navigate({ to: '/login' })}
-            className="px-8 py-3 text-base font-medium shadow-luxury"
+            onClick={handleContinue}
+            disabled={!selectedSample}
+            size="lg"
+            className="w-full shadow-luxury"
           >
-            Log In
+            Continue to Order Details
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
-          <Button
-            onClick={() => navigate({ to: '/signup' })}
-            variant="outline"
-            className="px-8 py-3 text-base font-medium border-2"
-          >
-            Sign Up
-          </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-8 shadow-luxury space-y-8">
-      <div>
-        <h2 className="text-2xl font-serif font-bold mb-2">Order This Product</h2>
-        <p className="text-muted-foreground">
-          Select a sample design and provide your brand details to proceed.
-        </p>
-      </div>
+    <Card className="shadow-luxury">
+      <CardHeader>
+        <CardTitle>Complete Your Order</CardTitle>
+        <CardDescription>
+          Selected: {selectedSample} • {price} • {deliveryTime}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {submitError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Order Error</AlertTitle>
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        )}
 
-      <ProductSampleSelector
-        selectedSample={selectedSample}
-        onSelectSample={setSelectedSample}
-      />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter your full name"
+                className={errors.name ? 'border-destructive' : ''}
+              />
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            </div>
 
-      <ProductOrderFormFields
-        brandName={brandName}
-        description={description}
-        onBrandNameChange={setBrandName}
-        onDescriptionChange={setDescription}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="your@email.com"
+                className={errors.email ? 'border-destructive' : ''}
+              />
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            </div>
 
-      <div className="pt-4">
-        <Button
-          id="addToCartBtn"
-          onClick={handleAddToCart}
-          disabled={addToCartMutation.isPending}
-          className="w-full sm:w-auto px-8 py-3 text-base font-medium shadow-luxury"
-        >
-          {addToCartMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Adding to Cart...
-            </>
-          ) : (
-            'Add to Cart & Proceed'
-          )}
-        </Button>
-      </div>
-    </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+1 234 567 8900"
+                className={errors.phone ? 'border-destructive' : ''}
+              />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dob">Date of Birth *</Label>
+              <Input
+                id="dob"
+                type="date"
+                value={formData.dob}
+                onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                className={errors.dob ? 'border-destructive' : ''}
+              />
+              {errors.dob && <p className="text-sm text-destructive">{errors.dob}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender *</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={Gender.male}>Male</SelectItem>
+                  <SelectItem value={Gender.female}>Female</SelectItem>
+                  <SelectItem value={Gender.other}>Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="brandName" className="text-base font-medium">
+                Shop / Brand Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="brandName"
+                type="text"
+                placeholder="Enter your Shop / Brand Name"
+                value={formData.brandName}
+                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                className={errors.brandName ? 'border-destructive' : ''}
+              />
+              {errors.brandName && <p className="text-sm text-destructive">{errors.brandName}</p>}
+            </div>
+
+            <ProductOrderFormFields
+              brandName={formData.brandName}
+              description={formData.description}
+              onBrandNameChange={(value) => setFormData({ ...formData, brandName: value })}
+              onDescriptionChange={(value) => setFormData({ ...formData, description: value })}
+            />
+            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep('sample')}
+              className="flex-1"
+              disabled={addToCartMutation.isPending}
+            >
+              Back to Sample Selection
+            </Button>
+            <Button
+              type="submit"
+              disabled={addToCartMutation.isPending}
+              className="flex-1 shadow-luxury"
+              size="lg"
+            >
+              {addToCartMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Creating Order...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Proceed to Payment
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

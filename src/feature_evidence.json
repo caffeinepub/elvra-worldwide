@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-an-account-creation-flow-that-matches-the-intent-of-the-provided-supabase-html-snippet-full-name-email-password-create-account-but-uses-internet-identity-for-authentication-no-supabase-and-stores-the-user-profile-in-the-motoko-backend-keyed-by-the-caller-principal-treat-this-principal-as-the-user-id",
-      "featureTitle": "Implement an account creation flow that matches the intent of the provided Supabase HTML snippet (Full Name, Email, Password, Create Account) but uses Internet Identity for authentication (no Supabase) and stores the user profile in the Motoko backend keyed by the caller Principal (treat this Principal as the user id).",
+      "featureId": "feature-fix-the-explore-our-work-product-grid-so-that-clicking-a-product-navigates-to-an-existing-product-detail-route-instead-of-a-missing-route-currently-the-product-grid-navigates-to-business-card-logo-design-product-banner-photo-frame-but-the-router-defines-products-business-card-products-logo-design-products-product-banner-products-photo-frame",
+      "featureTitle": "Fix the 'Explore Our Work' product grid so that clicking a product navigates to an existing product detail route instead of a missing route (currently the product grid navigates to '/business-card', '/logo-design', '/product-banner', '/photo-frame' but the router defines '/products/business-card', '/products/logo-design', '/products/product-banner', '/products/photo-frame').",
       "files": [
-        "frontend/src/hooks/useUserProfile.ts",
-        "frontend/src/pages/SignUpPage.tsx"
+        "frontend/src/pages/HomePage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -14,7 +13,9 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0"
       ],
       "testIds": [
         "REQ-1"
@@ -22,11 +23,14 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-frontend-update-the-sign-up-experience-frontend-src-pages-signuppage-tsx-to-support-a-simple-create-account-form-that-captures-full-name-and-email-and-triggers-the-new-backend-basic-profile-save-after-the-user-authenticates-with-internet-identity-avoid-asking-users-for-a-password-since-internet-identity-handles-authentication",
-      "featureTitle": "Frontend: update the Sign Up experience (`frontend/src/pages/SignUpPage.tsx`) to support a simple “Create Account” form that captures Full Name and Email and triggers the new backend basic-profile save after the user authenticates with Internet Identity; avoid asking users for a password since Internet Identity handles authentication.",
+      "featureId": "feature-restore-the-end-to-end-purchase-flow-for-each-product-to-match-the-previous-behavior-product-detail-including-sample-selection-add-to-cart-customer-form-submission-payment-step-thank-you-order-confirmed-experience-track-my-order-for-the-created-order",
+      "featureTitle": "Restore the end-to-end purchase flow for each product to match the previous behavior: product detail (including sample selection) → add to cart → customer form submission → payment step → thank you/order confirmed experience → 'Track My Order' for the created order.",
       "files": [
-        "frontend/src/hooks/useUserProfile.ts",
-        "frontend/src/pages/SignUpPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/ProductAddToCartSection.tsx",
+        "frontend/src/pages/OrderConfirmationPage.tsx",
+        "frontend/src/pages/PaymentPage.tsx",
+        "frontend/src/pages/PaymentSuccessPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -34,10 +38,80 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-replace-the-current-demo-payment-behavior-on-the-payment-page-with-real-stripe-payment-initiation-so-users-can-complete-an-actual-payment-for-the-order-no-fake-simulated-payment",
+      "featureTitle": "Replace the current demo payment behavior on the Payment page with real Stripe payment initiation so users can complete an actual payment for the order (no fake/simulated payment).",
+      "files": [
+        "frontend/src/hooks/useCreateCheckoutSession.ts",
+        "frontend/src/pages/PaymentPage.tsx",
+        "frontend/src/utils/stripeOrderMapping.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0"
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-post-payment-success-experience-so-it-reflects-real-stripe-payment-completion-only-show-payment-received-confirmed-messaging-after-stripe-verification-succeeds-then-transition-the-order-into-the-correct-paid-confirmed-state-and-keep-the-explore-home-and-track-my-order-actions-working",
+      "featureTitle": "Update the post-payment success experience so it reflects real Stripe payment completion: only show 'payment received/confirmed' messaging after Stripe verification succeeds, then transition the order into the correct paid/confirmed state and keep the 'Explore Home' and 'Track My Order' actions working.",
+      "files": [
+        "frontend/src/pages/PaymentSuccessPage.tsx",
+        "frontend/src/utils/urlParams.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-create-and-wire-an-explicit-order-confirmation-page-currently-empty-into-the-router-and-checkout-flow-so-that-the-user-has-a-dedicated-thank-you-order-confirmed-screen-reachable-only-after-completing-the-payment-step",
+      "featureTitle": "Create and wire an explicit Order Confirmation page (currently empty) into the router and checkout flow, so that the user has a dedicated thank-you/order-confirmed screen reachable only after completing the payment step.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/OrderConfirmationPage.tsx",
+        "frontend/src/pages/PaymentSuccessPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0",
+        "stripe@3.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
       ],
       "confidence": "high"
     }

@@ -1,6 +1,13 @@
-import { createRouter, createRoute, createRootRoute, RouterProvider, Outlet } from '@tanstack/react-router';
+import { StrictMode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
+import { InternetIdentityProvider } from './hooks/useInternetIdentity';
+import { Toaster } from '@/components/ui/sonner';
+
 import BrandLayout from './components/BrandLayout';
+import AuthGate from './components/AuthGate';
+
 import HomePage from './pages/HomePage';
 import ServicesPage from './pages/ServicesPage';
 import PricingPage from './pages/PricingPage';
@@ -14,50 +21,61 @@ import ProductBannerPage from './pages/ProductBannerPage';
 import PhotoFramePage from './pages/PhotoFramePage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import AuthGate from './components/AuthGate';
+import PaymentFailurePage from './pages/PaymentFailurePage';
+import TrackOrderPage from './pages/TrackOrderPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const rootRoute = createRootRoute({
   component: () => (
     <BrandLayout>
       <Outlet />
     </BrandLayout>
-  )
+  ),
 });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: HomePage
+  component: HomePage,
 });
 
 const servicesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/services',
-  component: ServicesPage
+  component: ServicesPage,
 });
 
 const pricingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/pricing',
-  component: PricingPage
+  component: PricingPage,
 });
 
 const contactRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/contact',
-  component: ContactPage
+  component: ContactPage,
 });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  component: LoginPage
+  component: LoginPage,
 });
 
-const signUpRoute = createRoute({
+const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/signup',
-  component: SignUpPage
+  component: SignUpPage,
 });
 
 const dashboardRoute = createRoute({
@@ -67,31 +85,31 @@ const dashboardRoute = createRoute({
     <AuthGate>
       <DashboardPage />
     </AuthGate>
-  )
+  ),
 });
 
 const businessCardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/business-card',
-  component: BusinessCardPage
+  path: '/products/business-card',
+  component: BusinessCardPage,
 });
 
 const logoDesignRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/logo-design',
-  component: LogoDesignPage
+  path: '/products/logo-design',
+  component: LogoDesignPage,
 });
 
 const productBannerRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/product-banner',
-  component: ProductBannerPage
+  path: '/products/product-banner',
+  component: ProductBannerPage,
 });
 
 const photoFrameRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/photo-frame',
-  component: PhotoFramePage
+  path: '/products/photo-frame',
+  component: PhotoFramePage,
 });
 
 const paymentRoute = createRoute({
@@ -101,17 +119,47 @@ const paymentRoute = createRoute({
     <AuthGate>
       <PaymentPage />
     </AuthGate>
-  )
+  ),
 });
 
 const paymentSuccessRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/payment-success/$orderId',
+  path: '/payment-success',
   component: () => (
     <AuthGate>
       <PaymentSuccessPage />
     </AuthGate>
-  )
+  ),
+});
+
+const paymentFailureRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/payment-failure',
+  component: () => (
+    <AuthGate>
+      <PaymentFailurePage />
+    </AuthGate>
+  ),
+});
+
+const trackOrderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/track-order/$orderId',
+  component: () => (
+    <AuthGate>
+      <TrackOrderPage />
+    </AuthGate>
+  ),
+});
+
+const orderConfirmationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/order-confirmation/$orderId',
+  component: () => (
+    <AuthGate>
+      <OrderConfirmationPage />
+    </AuthGate>
+  ),
 });
 
 const routeTree = rootRoute.addChildren([
@@ -120,22 +168,38 @@ const routeTree = rootRoute.addChildren([
   pricingRoute,
   contactRoute,
   loginRoute,
-  signUpRoute,
+  signupRoute,
   dashboardRoute,
   businessCardRoute,
   logoDesignRoute,
   productBannerRoute,
   photoFrameRoute,
   paymentRoute,
-  paymentSuccessRoute
+  paymentSuccessRoute,
+  paymentFailureRoute,
+  trackOrderRoute,
+  orderConfirmationRoute,
 ]);
 
 const router = createRouter({ routeTree });
 
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
+
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <RouterProvider router={router} />
-    </ThemeProvider>
+    <StrictMode>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <InternetIdentityProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </InternetIdentityProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </StrictMode>
   );
 }

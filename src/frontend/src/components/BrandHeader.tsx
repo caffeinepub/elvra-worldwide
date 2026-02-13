@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useLocation } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { Menu, X } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 export default function BrandHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { identity, clear, login, isLoggingIn } = useInternetIdentity();
   const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,6 +31,20 @@ export default function BrandHeader() {
     }
   };
 
+  const scrollToServices = () => {
+    // If not on home page, navigate to home first
+    if (location.pathname !== '/') {
+      navigate({ to: '/', search: { scrollTo: 'premium-services' } });
+    } else {
+      // Already on home, just scroll
+      const section = document.getElementById('premium-services');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,12 +66,12 @@ export default function BrandHeader() {
             >
               Home
             </Link>
-            <Link 
-              to="/services" 
+            <button
+              onClick={scrollToServices}
               className="text-sm font-medium transition-colors hover:text-primary"
             >
               Services
-            </Link>
+            </button>
             <Link 
               to="/pricing" 
               className="text-sm font-medium transition-colors hover:text-primary"
@@ -127,13 +142,12 @@ export default function BrandHeader() {
               >
                 Home
               </Link>
-              <Link 
-                to="/services" 
-                className="text-sm font-medium transition-colors hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                onClick={scrollToServices}
+                className="text-sm font-medium text-left transition-colors hover:text-primary"
               >
                 Services
-              </Link>
+              </button>
               <Link 
                 to="/pricing" 
                 className="text-sm font-medium transition-colors hover:text-primary"
@@ -195,4 +209,3 @@ export default function BrandHeader() {
     </header>
   );
 }
-

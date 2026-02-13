@@ -1,8 +1,29 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import ProductAddToCartSection from '../components/ProductAddToCartSection';
+import { getPremiumServiceByName } from '../constants/premiumServices';
 
 export default function ProductBannerPage() {
+  const [currentPreview, setCurrentPreview] = useState<'original' | 'duplicate'>('original');
+  const service = getPremiumServiceByName('Product Banner Design');
+
+  const previews = {
+    original: {
+      src: '/assets/generated/product-banner-original.dim_1600x900.png',
+      label: 'Original Design',
+    },
+    duplicate: {
+      src: '/assets/generated/product-banner-duplicate-with-photo.dim_1600x900.png',
+      label: 'Design with Photo',
+    },
+  };
+
+  const togglePreview = () => {
+    setCurrentPreview(prev => prev === 'original' ? 'duplicate' : 'original');
+  };
+
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,12 +43,65 @@ export default function ProductBannerPage() {
             </p>
           </div>
 
-          <div className="rounded-lg overflow-hidden border border-border shadow-luxury mb-12">
-            <img 
-              src="/assets/generated/banner3.dim_1600x900.jpg" 
-              alt="Product Banner"
-              className="w-full h-auto"
-            />
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-serif font-bold">Preview Designs</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={togglePreview}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground px-3">
+                  {currentPreview === 'original' ? '1' : '2'} / 2
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={togglePreview}
+                  className="gap-2"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg overflow-hidden border border-border shadow-luxury bg-card">
+              <div className="p-4 bg-muted/50 border-b border-border">
+                <p className="text-sm font-medium text-center">
+                  {previews[currentPreview].label}
+                </p>
+              </div>
+              <div className="relative aspect-video">
+                <img 
+                  src={previews[currentPreview].src}
+                  alt={previews[currentPreview].label}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-2 justify-center">
+              <button
+                onClick={() => setCurrentPreview('original')}
+                className={`h-2 w-8 rounded-full transition-colors ${
+                  currentPreview === 'original' ? 'bg-primary' : 'bg-muted'
+                }`}
+                aria-label="View original design"
+              />
+              <button
+                onClick={() => setCurrentPreview('duplicate')}
+                className={`h-2 w-8 rounded-full transition-colors ${
+                  currentPreview === 'duplicate' ? 'bg-primary' : 'bg-muted'
+                }`}
+                aria-label="View design with photo"
+              />
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-8 shadow-luxury mb-8">
@@ -47,7 +121,11 @@ export default function ProductBannerPage() {
             </div>
           </div>
 
-          <ProductAddToCartSection productName="Product Banner" />
+          <ProductAddToCartSection 
+            productName="Product Banner Design"
+            price={service?.priceLabel || '$150'}
+            deliveryTime={service?.deliveryTime || 'Delivery: 3 Business Days'}
+          />
         </div>
       </div>
     </div>

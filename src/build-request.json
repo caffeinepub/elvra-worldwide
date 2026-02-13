@@ -1,90 +1,131 @@
 {
   "kind": "build_request",
-  "title": "Add simple account creation flow (Full Name + Email) using Internet Identity and backend user profiles",
-  "priority": "normal",
+  "title": "Restore product click routes and full checkout flow with real Stripe payment",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement an account creation flow that matches the intent of the provided Supabase HTML snippet (Full Name, Email, Password, Create Account) but uses Internet Identity for authentication (no Supabase) and stores the user profile in the Motoko backend keyed by the caller Principal (treat this Principal as the user id).",
-      "target": "both",
+      "text": "Fix the 'Explore Our Work' product grid so that clicking a product navigates to an existing product detail route instead of a missing route (currently the product grid navigates to '/business-card', '/logo-design', '/product-banner', '/photo-frame' but the router defines '/products/business-card', '/products/logo-design', '/products/product-banner', '/products/photo-frame').",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1"
         ],
         "quotes": [
-          "<input id=\"name\" placeholder=\"Full Name\" />\n<input id=\"email\" placeholder=\"Email\" />\n<input id=\"password\" type=\"password\" placeholder=\"Password\" />\n<button onclick=\"signUp()\">Create Account</button>\n\n<script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>\n\n<script>\nconst supabase = supabaseJs.createClient(\n  \"SUPABASE_URL_HERE\",\n  \"SUPABASE_ANON_KEY_HERE\"\n);\n\nasync function signUp() {\n  const name = document.getElementById(\"name\").value;\n  const email = document.getElementById(\"email\").value;\n  const password = document.getElementById(\"password\").value;\n\n  const { data, error } = await supabase.auth.signUp({\n    email,\n    password\n  });\n\n  if (error) {\n    alert(error.message);\n    return;\n  }\n\n  await supabase.from(\"users\").insert({\n    id: data.user.id,\n    name: name,\n    email: email\n  });\n\n  alert(\"Account created successfully\");\n}\n</script>"
+          "explore our work me jitne product hai un par click karta hu to not found kyu likh kar aa raha hai phle sab thik tha",
+          "Ha purana flow bapas kare or product list hai but product list par click karte hai to not found ka page open hota hai"
         ]
       },
       "acceptanceCriteria": [
-        "Users can create an account without any Supabase dependency or keys.",
-        "Authentication uses the existing Internet Identity login flow.",
-        "After successful signup, a user profile is persisted in the backend and can be retrieved via existing profile query hooks.",
-        "The stored profile includes the user’s Full Name and Email; the user id is represented by the caller Principal (no separate Supabase user id).",
-        "All user-facing UI text for this flow is in English."
+        "From the Home page 'Explore Our Work' section, clicking each product opens its corresponding product page without showing a Not Found screen.",
+        "The product navigation URLs match the routes registered in frontend/src/App.tsx."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) without requiring the full multi-field profile form, while keeping the existing `UserProfile` type and stable storage model unchanged.",
-      "target": "backend",
+      "text": "Restore the end-to-end purchase flow for each product to match the previous behavior: product detail (including sample selection) → add to cart → customer form submission → payment step → thank you/order confirmed experience → 'Track My Order' for the created order.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1"
         ],
         "quotes": [
-          "await supabase.from(\"users\").insert({\n    id: data.user.id,\n    name: name,\n    email: email\n  });"
+          "phle sab thik tha product par click karte the sample dikhane Lagte the add to Cart ka option aata tha fir customer form fill karte the fir payment ka option aata tha fir payment received hone ke baad thank you order confirmed aata tha fir track my order dikhata tha lekin ab kuch nhi dikhata hai bhai phle jaisa kar"
         ]
       },
       "acceptanceCriteria": [
-        "A new backend method exists to save basic account details for the caller (full name + email).",
-        "The method persists data into the existing `userProfiles` map keyed by `caller` Principal.",
-        "No breaking changes are introduced to existing `getCallerUserProfile` / `saveCallerUserProfile` behavior."
+        "After submitting an order via the product add-to-cart/customer form flow, the app routes the user to /payment/$orderId for the newly created order.",
+        "After successful payment completion, the user sees a thank-you / order-confirmed screen with an actionable 'Track My Order' button that routes to /track-order/$orderId.",
+        "The Track Order page loads the correct order and does not show 'not found' for a valid orderId owned by the caller."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Frontend: update the Sign Up experience (`frontend/src/pages/SignUpPage.tsx`) to support a simple “Create Account” form that captures Full Name and Email and triggers the new backend basic-profile save after the user authenticates with Internet Identity; avoid asking users for a password since Internet Identity handles authentication.",
-      "target": "frontend",
+      "text": "Replace the current demo payment behavior on the Payment page with real Stripe payment initiation so users can complete an actual payment for the order (no fake/simulated payment).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-1"
         ],
         "quotes": [
-          "<button onclick=\"signUp()\">Create Account</button>"
+          "payment ko option implement karna hai",
+          "mujhe fake payment nhi leni hai mujhe real payment received karni hai",
+          "Ha Mai stripe real payment enable karwana chahta hu"
         ]
       },
       "acceptanceCriteria": [
-        "The Sign Up page provides an obvious path to: (1) authenticate via Internet Identity, then (2) enter Full Name + Email, then (3) create the account.",
-        "Submitting the form saves the basic profile via the backend and navigates the user to `/dashboard` on success.",
-        "The page does not request or store a password (because authentication is via Internet Identity).",
-        "Form validation prevents submission when Full Name is empty or Email is invalid and shows English error messages.",
-        "No changes are made to immutable frontend paths (e.g., `frontend/src/hooks/useInternetIdentity.ts(x)` and `frontend/src/hooks/useActor.ts`)."
+        "The Payment page no longer labels the flow as a demo and no longer navigates directly to /payment-success/$orderId without completing Stripe payment.",
+        "Clicking the payment CTA initiates a real Stripe payment flow (e.g., redirect to Stripe Checkout or confirm a PaymentIntent) using credentials that are not exposed as a Stripe secret key in the frontend bundle.",
+        "After Stripe indicates success, the app returns to the app and associates the successful payment with the correct orderId."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Ha Mai stripe real payment enable karwana chahta hu"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes an admin-only method to set/update required Stripe configuration (at minimum a Stripe secret key; include any other required fields for the chosen Stripe flow).",
+        "Backend exposes a user-authorized method that, given an orderId owned by the caller, creates a Stripe payment session/intention for that order and returns the data the frontend needs to proceed (e.g., a Checkout URL or client_secret).",
+        "Backend exposes a method to verify a completed Stripe payment for an order (e.g., by retrieving the Checkout Session / PaymentIntent from Stripe) and updates the order payment status accordingly.",
+        "A user cannot create or verify Stripe payment for an order they do not own."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Update the post-payment success experience so it reflects real Stripe payment completion: only show 'payment received/confirmed' messaging after Stripe verification succeeds, then transition the order into the correct paid/confirmed state and keep the 'Explore Home' and 'Track My Order' actions working.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "payment received hone ke baad thank you order confirmed aata tha"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The success page does not mark payment as received unless Stripe verification for the payment succeeds.",
+        "On successful verification, the order's paymentStatus is updated to the appropriate paid/verified/confirmed state consistent with backend rules.",
+        "The success UI includes working navigation to Home and to /track-order/$orderId."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Create and wire an explicit Order Confirmation page (currently empty) into the router and checkout flow, so that the user has a dedicated thank-you/order-confirmed screen reachable only after completing the payment step.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "thank you order confirmed aata tha"
+        ]
+      },
+      "acceptanceCriteria": [
+        "frontend/src/pages/OrderConfirmationPage.tsx contains a real UI (not empty) that summarizes confirmation and provides 'Track My Order' and 'Explore Home' actions in English.",
+        "A route exists for the order confirmation page and it is only reachable after successful payment completion (direct navigation without completing payment results in a safe redirect or an informative error state)."
       ]
     }
   ],
   "constraints": [
-    "Do not integrate Supabase (`@supabase/supabase-js`) or any third-party auth; only Internet Identity is supported.",
-    "Backend must remain a single Motoko actor in `backend/main.mo`.",
-    "Do not edit files under `frontend/src/components/ui` or other immutable paths listed in SYSTEM_CONTEXT.",
-    "Use English for all user-facing text."
+    "All user-facing text introduced or modified for this change must be in English.",
+    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if a stable-state upgrade is required."
   ],
   "nonGoals": [
-    "Implement email/password authentication.",
-    "Create or manage a Supabase `users` table or any external database schema.",
-    "Add third-party OAuth providers (Google/Facebook/GitHub/Auth0)."
+    "Implementing Razorpay payments (requested initially but not supported in this platform).",
+    "Adding third-party authentication providers (only Internet Identity).",
+    "Adding real-time features (WebSockets/push)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

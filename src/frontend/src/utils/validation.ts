@@ -1,6 +1,6 @@
 export const DESCRIPTION_MAX_WORDS = 1000;
 
-function countWords(text: string): number {
+export function countWords(text: string): number {
   const trimmed = text.trim();
   if (trimmed.length === 0) return 0;
   return trimmed.split(/\s+/).filter(w => w.length > 0).length;
@@ -26,4 +26,7 @@ export function validateDescription(description: string): { isValid: boolean; me
   return { isValid: true };
 }
 
-export { countWords };
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+}

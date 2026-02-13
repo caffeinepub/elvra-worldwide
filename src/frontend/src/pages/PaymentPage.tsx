@@ -1,28 +1,55 @@
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useGetCallerOrders } from '../hooks/useAddToCart';
-import { Loader2, CreditCard, Package, Tag, FileText, CheckCircle2 } from 'lucide-react';
+import { useCreateCheckoutSession } from '../hooks/useCreateCheckoutSession';
+import { useIsStripeConfigured } from '../hooks/useStripeConfiguration';
+import { orderToShoppingItems } from '../utils/stripeOrderMapping';
+import { Loader2, CreditCard, Package, FileText, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { PaymentStatus } from '../backend';
+import { useState } from 'react';
 
 export default function PaymentPage() {
   const { orderId } = useParams({ strict: false });
   const navigate = useNavigate();
   const { data: orders, isLoading } = useGetCallerOrders();
+  const { data: isStripeConfigured, isLoading: isCheckingStripe } = useIsStripeConfigured();
+  const createCheckoutSession = useCreateCheckoutSession();
+  const [error, setError] = useState<string | null>(null);
 
   const order = orders?.find((o) => o.id.toString() === orderId);
 
-  const placeOrder = () => {
-    alert("Payment gateway coming next (Stripe / Razorpay)");
-    if (orderId) {
-      navigate({ to: '/payment-success/$orderId', params: { orderId } });
+  const handlePayment = async () => {
+    if (!order) return;
+    
+    setError(null);
+    
+    try {
+      // Convert order to shopping items
+      const items = orderToShoppingItems(order);
+      
+      // Create checkout session
+      const session = await createCheckoutSession.mutateAsync(items);
+      
+      if (!session?.url) {
+        throw new Error('Stripe session missing url');
+      }
+      
+      // Store orderId in sessionStorage for return handling
+      sessionStorage.setItem('pendingPaymentOrderId', orderId || '');
+      
+      // Redirect to Stripe Checkout
+      window.location.href = session.url;
+    } catch (err: any) {
+      console.error('Payment initiation error:', err);
+      setError(err.message || 'Failed to initiate payment. Please try again.');
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isCheckingStripe) {
     return (
       <div className="min-h-screen py-16 md:py-24 flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -52,26 +79,81 @@ export default function PaymentPage() {
     );
   }
 
+  const getPaymentStatusBadge = (status: PaymentStatus) => {
+    switch (status) {
+      case PaymentStatus.pending:
+        return (
+          <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case PaymentStatus.paidSubmitted:
+        return (
+          <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300">
+            <Clock className="h-3 w-3 mr-1" />
+            Submitted
+          </Badge>
+        );
+      case PaymentStatus.verified:
+        return (
+          <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300">
+            Verified
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Complete Payment</h1>
           <p className="text-lg text-muted-foreground">
-            Review your order details and proceed with payment
+            Review your order details and complete payment via Stripe
           </p>
         </div>
+
+        {!isStripeConfigured && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Payment System Not Configured</AlertTitle>
+            <AlertDescription>
+              Stripe payment is not configured. Please contact the administrator to set up payment processing.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Payment Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Card className="shadow-luxury mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              Order Details
+              Order Summary
             </CardTitle>
             <CardDescription>Order ID: #{order.id.toString()}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Customer Name</p>
+                <p className="font-medium text-lg">{order.name}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium text-lg">{order.email}</p>
+              </div>
+
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Product</p>
                 <p className="font-medium text-lg">{order.product}</p>
@@ -89,19 +171,7 @@ export default function PaymentPage() {
 
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Payment Status</p>
-                <div className="flex items-center gap-2">
-                  {order.paymentStatus === 'Pending' ? (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 text-sm font-medium">
-                      <CreditCard className="h-3 w-3" />
-                      {order.paymentStatus}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm font-medium">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {order.paymentStatus}
-                    </span>
-                  )}
-                </div>
+                {getPaymentStatusBadge(order.paymentStatus)}
               </div>
             </div>
 
@@ -123,7 +193,7 @@ export default function PaymentPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Price</p>
-                <p className="font-medium">{order.price}</p>
+                <p className="font-medium text-2xl text-primary">{order.price}</p>
               </div>
 
               <div className="space-y-1">
@@ -134,73 +204,41 @@ export default function PaymentPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-luxury border-primary/20 mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Checkout Information
-            </CardTitle>
-            <CardDescription>
-              Please provide your details to complete the order
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Your Name" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Email" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">WhatsApp Number</Label>
-              <Input id="phone" type="tel" placeholder="WhatsApp Number" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="product">Product Name</Label>
-              <Input id="product" placeholder="Product Name" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Design Requirements</Label>
-              <Textarea 
-                id="description" 
-                placeholder="Your design requirements"
-                rows={5}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="shadow-luxury border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
-              Payment
+              Secure Payment via Stripe
             </CardTitle>
             <CardDescription>
-              This is a demo payment flow. Click the button below to simulate payment completion.
+              You will be redirected to Stripe's secure checkout to complete your payment.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">Demo Payment Information</p>
+              <p className="text-sm font-medium">Secure Payment Processing</p>
               <p className="text-sm text-muted-foreground">
-                In a production environment, this would integrate with a real payment provider like Stripe or PayPal.
+                Your payment is processed securely through Stripe. We never store your card details.
               </p>
             </div>
 
             <Button
-              onClick={placeOrder}
+              onClick={handlePayment}
               size="lg"
               className="w-full shadow-luxury"
+              disabled={!isStripeConfigured || createCheckoutSession.isPending}
             >
-              <CreditCard className="mr-2 h-5 w-5" />
-              Pay & Place Order
+              {createCheckoutSession.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Redirecting to Stripe...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Proceed to Payment
+                </>
+              )}
             </Button>
 
             <Button
@@ -208,6 +246,7 @@ export default function PaymentPage() {
               variant="outline"
               size="lg"
               className="w-full"
+              disabled={createCheckoutSession.isPending}
             >
               Cancel & Return to Dashboard
             </Button>

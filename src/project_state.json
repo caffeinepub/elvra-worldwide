@@ -1,26 +1,52 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project includes a Supabase-backed user sign-up flow with a basic HTML form and client-side signup handler.",
+  "summary": "Restore the previous e-commerce product flow (product detail → add to cart → customer form → Stripe real payment → thank you/order confirmed → track order) and fix 'Not Found' errors when clicking products.",
   "architectural_notes": [
-    "Use Supabase JS v2 client-side to create users via `supabase.auth.signUp({ email, password })` and then insert a profile row into a `users` table keyed by the auth `user.id`."
+    "Payment provider decision: use Stripe for real payments (Razorpay not supported on the current platform)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Clicking products in the product list currently opens a 'Not Found' page; previously product detail and checkout flow worked."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-implement-an-account-creation-flow-that-matches-the-intent-of-the-provided-supabase-html-snippet-full-name-email-password-create-account-but-uses-internet-identity-for-authentication-no-supabase-and-stores-the-user-profile-in-the-motoko-backend-keyed-by-the-caller-principal-treat-this-principal-as-the-user-id",
-      "title": "Implement an account creation flow that matches the intent of the provided Supabase HTML snippet (Full Name, Email, Password, Create Account) but uses Internet Identity for authentication (no Supabase) and stores the user profile in the Motoko backend keyed by the caller Principal (treat this Principal as the user id).",
+      "id": "feature-fix-the-explore-our-work-product-grid-so-that-clicking-a-product-navigates-to-an-existing-product-detail-route-instead-of-a-missing-route-currently-the-product-grid-navigates-to-business-card-logo-design-product-banner-photo-frame-but-the-router-defines-products-business-card-products-logo-design-products-product-banner-products-photo-frame",
+      "title": "Fix the 'Explore Our Work' product grid so that clicking a product navigates to an existing product detail route instead of a missing route (currently the product grid navigates to '/business-card', '/logo-design', '/product-banner', '/photo-frame' but the router defines '/products/business-card', '/products/logo-design', '/products/product-banner', '/products/photo-frame').",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-frontend-update-the-sign-up-experience-frontend-src-pages-signuppage-tsx-to-support-a-simple-create-account-form-that-captures-full-name-and-email-and-triggers-the-new-backend-basic-profile-save-after-the-user-authenticates-with-internet-identity-avoid-asking-users-for-a-password-since-internet-identity-handles-authentication",
-      "title": "Frontend: update the Sign Up experience (`frontend/src/pages/SignUpPage.tsx`) to support a simple “Create Account” form that captures Full Name and Email and triggers the new backend basic-profile save after the user authenticates with Internet Identity; avoid asking users for a password since Internet Identity handles authentication.",
+      "id": "feature-restore-the-end-to-end-purchase-flow-for-each-product-to-match-the-previous-behavior-product-detail-including-sample-selection-add-to-cart-customer-form-submission-payment-step-thank-you-order-confirmed-experience-track-my-order-for-the-created-order",
+      "title": "Restore the end-to-end purchase flow for each product to match the previous behavior: product detail (including sample selection) → add to cart → customer form submission → payment step → thank you/order confirmed experience → 'Track My Order' for the created order.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-demo-payment-behavior-on-the-payment-page-with-real-stripe-payment-initiation-so-users-can-complete-an-actual-payment-for-the-order-no-fake-simulated-payment",
+      "title": "Replace the current demo payment behavior on the Payment page with real Stripe payment initiation so users can complete an actual payment for the order (no fake/simulated payment).",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-post-payment-success-experience-so-it-reflects-real-stripe-payment-completion-only-show-payment-received-confirmed-messaging-after-stripe-verification-succeeds-then-transition-the-order-into-the-correct-paid-confirmed-state-and-keep-the-explore-home-and-track-my-order-actions-working",
+      "title": "Update the post-payment success experience so it reflects real Stripe payment completion: only show 'payment received/confirmed' messaging after Stripe verification succeeds, then transition the order into the correct paid/confirmed state and keep the 'Explore Home' and 'Track My Order' actions working.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-and-wire-an-explicit-order-confirmation-page-currently-empty-into-the-router-and-checkout-flow-so-that-the-user-has-a-dedicated-thank-you-order-confirmed-screen-reachable-only-after-completing-the-payment-step",
+      "title": "Create and wire an explicit Order Confirmation page (currently empty) into the router and checkout flow, so that the user has a dedicated thank-you/order-confirmed screen reachable only after completing the payment step.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -28,20 +54,32 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement user account creation UI and Supabase Auth sign-up, then store user profile (id, name, email) in a `users` table",
+      "summary": "Fix product clicks opening 'Not Found' by restoring working product detail routes/pages",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Restore the full pre-existing purchase flow (product sample/detail → add to cart → customer form → payment → order confirmed/thank you → track order)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Backend: add a dedicated method to store a basic user profile (Full Name + Email) without requiring the full multi-field profile form, while keeping the existing `UserProfile` type and stable storage model unchanged.",
+      "summary": "Implement and enable real Stripe payments (not fake/simulated) in the checkout flow",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Implement backend support for Stripe payments needed by the frontend payment step, including admin-only configuration for Stripe credentials and server-side creation/verification of the Stripe payment session for an order.",
       "reqIds": [
-        "REQ-2"
+        "REQ-4"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Add simple account creation flow (Full Name + Email) using Internet Identity and backend user profiles",
+  "projectName": "Restore product click routes and full checkout flow with real Stripe payment",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

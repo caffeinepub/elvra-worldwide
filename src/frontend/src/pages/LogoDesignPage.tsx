@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import ProductAddToCartSection from '../components/ProductAddToCartSection';
+import { getPremiumServiceByName } from '../constants/premiumServices';
 
 export default function LogoDesignPage() {
+  const service = getPremiumServiceByName('Brand Logo Design');
+  
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,7 +50,11 @@ export default function LogoDesignPage() {
             </div>
           </div>
 
-          <ProductAddToCartSection productName="Logo Design" />
+          <ProductAddToCartSection 
+            productName="Brand Logo Design"
+            price={service?.priceLabel || '$30'}
+            deliveryTime={service?.deliveryTime || 'Delivery: 3 Business Days'}
+          />
         </div>
       </div>
     </div>

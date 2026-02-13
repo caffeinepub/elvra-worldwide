@@ -24,10 +24,16 @@ export interface AddToCartInput {
   'product' : string,
 }
 export interface BasicProfile { 'fullName' : string, 'email' : string }
+export interface ConfirmationEmailRequest {
+  'confirmationMessageTemplate' : string,
+  'orderId' : bigint,
+  'timestamp' : Time,
+  'customerEmail' : string,
+}
 export interface ExpandedOrder {
   'id' : bigint,
   'dob' : string,
-  'paymentStatus' : string,
+  'paymentStatus' : PaymentStatus,
   'sampleSelected' : string,
   'orderStatus' : OrderStatus,
   'owner' : Principal,
@@ -60,6 +66,11 @@ export type OrderStatus = { 'shipped' : null } |
   { 'pending' : null } |
   { 'delivered' : null } |
   { 'confirmed' : null };
+export type PaymentStatus = { 'verified' : null } |
+  { 'pending' : null } |
+  { 'paidSubmitted' : null } |
+  { 'confirmed' : null } |
+  { 'failed' : null };
 export interface Sample {
   'description' : string,
   'sampleName' : string,
@@ -70,8 +81,23 @@ export interface Service {
   'id' : bigint,
   'name' : string,
   'deliveryTime' : string,
-  'priceRange' : string,
+  'priceUSD' : bigint,
 }
+export interface ShoppingItem {
+  'productName' : string,
+  'currency' : string,
+  'quantity' : bigint,
+  'priceInCents' : bigint,
+  'productDescription' : string,
+}
+export interface StripeConfiguration {
+  'allowedCountries' : Array<string>,
+  'secretKey' : string,
+}
+export type StripeSessionStatus = {
+    'completed' : { 'userPrincipal' : [] | [string], 'response' : string }
+  } |
+  { 'failed' : { 'error' : string } };
 export interface SupportRequest {
   'name' : string,
   'email' : string,
@@ -79,6 +105,15 @@ export interface SupportRequest {
   'timestamp' : Time,
 }
 export type Time = bigint;
+export interface TransformationInput {
+  'context' : Uint8Array,
+  'response' : http_request_result,
+}
+export interface TransformationOutput {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
 export interface UserProfile {
   'dob' : string,
   'fullName' : string,
@@ -90,29 +125,53 @@ export interface UserProfile {
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface http_header { 'value' : string, 'name' : string }
+export interface http_request_result {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addSample' : ActorMethod<[string, string, string, string], undefined>,
-  'addService' : ActorMethod<[string, string, string], bigint>,
+  'addService' : ActorMethod<[string, bigint, string], bigint>,
   'addToCart' : ActorMethod<[AddToCartInput], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'createCheckoutSession' : ActorMethod<
+    [Array<ShoppingItem>, string, string],
+    string
+  >,
   'deleteNotificationRequest' : ActorMethod<[bigint], undefined>,
+  'getAllConfirmationEmailRequests' : ActorMethod<
+    [],
+    Array<ConfirmationEmailRequest>
+  >,
   'getAllNotificationRequests' : ActorMethod<[], Array<NotificationRequest>>,
   'getCallerOrders' : ActorMethod<[], Array<ExpandedOrder>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getConfirmationMessageTemplate' : ActorMethod<[], string>,
   'getCustomerOrders' : ActorMethod<[string], Array<ExpandedOrder>>,
   'getOrdersByStatus' : ActorMethod<[OrderStatus], Array<ExpandedOrder>>,
   'getSamples' : ActorMethod<[], Array<Sample>>,
   'getServices' : ActorMethod<[], Array<Service>>,
+  'getStripeSessionStatus' : ActorMethod<[string], StripeSessionStatus>,
   'getSupportRequests' : ActorMethod<[], Array<SupportRequest>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isStripeConfigured' : ActorMethod<[], boolean>,
   'saveBasicProfile' : ActorMethod<[BasicProfile], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setStripeConfiguration' : ActorMethod<[StripeConfiguration], undefined>,
+  'submitConfirmationEmailRequest' : ActorMethod<
+    [bigint, string, string],
+    undefined
+  >,
   'submitSupportRequest' : ActorMethod<[string, string, string], undefined>,
-  'updateOrderPaymentStatus' : ActorMethod<[bigint, string], undefined>,
+  'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
+  'updateOrderPaymentStatus' : ActorMethod<[bigint, PaymentStatus], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
+  'verifyPaymentAndConfirmOrder' : ActorMethod<[bigint], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

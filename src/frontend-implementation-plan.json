@@ -1,51 +1,128 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Simple Internet Identity sign-up (Full Name + Email) with backend basic profile save",
+  "title": "Restore product routes and real Stripe checkout with order confirmation",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add an Internet Identity–based account creation flow that collects Full Name + Email (no Supabase, no password) and persists the caller-keyed profile via the backend basic-profile save, making it retrievable via existing profile query hooks.",
+      "summary": "Fix Home page product grid navigation to match existing /products/* routes.",
       "acceptanceCriteria": [
-        "Users can create an account without any Supabase dependency or keys.",
-        "Authentication uses the existing Internet Identity login flow.",
-        "After successful signup, a user profile is persisted in the backend and can be retrieved via existing profile query hooks.",
-        "The stored profile includes the user’s Full Name and Email; the user id is represented by the caller Principal (no separate Supabase user id).",
-        "All user-facing UI text for this flow is in English."
+        "From the Home page 'Explore Our Work' section, clicking each product opens its corresponding product page without showing a Not Found screen.",
+        "The product navigation URLs match the routes registered in frontend/src/App.tsx."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useUserProfile.ts",
+          "path": "frontend/src/pages/HomePage.tsx",
           "operation": "modify",
-          "description": "Add a dedicated React Query mutation hook (e.g., useSaveBasicProfile) that calls the actor’s basic-profile save capability and invalidates/refetches the existing ['currentUserProfile'] query so the saved profile can be retrieved via the existing profile query hook. Use the selected authorization component’s guidance for post-login profile setup patterns; verify the component's usage instructions before implementing."
+          "description": "Update the 'Explore Our Work' products list to navigate to the existing registered routes (/products/business-card, /products/logo-design, /products/product-banner, /products/photo-frame) instead of the missing legacy paths."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Restore end-to-end checkout routing and state handoff across product detail → cart submission → payment → confirmation → track order.",
+      "acceptanceCriteria": [
+        "After submitting an order via the product add-to-cart/customer form flow, the app routes the user to /payment/$orderId for the newly created order.",
+        "After successful payment completion, the user sees a thank-you / order-confirmed screen with an actionable 'Track My Order' button that routes to /track-order/$orderId.",
+        "The Track Order page loads the correct order and does not show 'not found' for a valid orderId owned by the caller."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ProductAddToCartSection.tsx",
+          "operation": "modify",
+          "description": "Confirm the restored flow remains intact: keep navigation to /payment/$orderId only when a non-zero orderId is returned; improve English error handling for invalid orderId and failed cart submission."
         },
         {
-          "path": "frontend/src/pages/SignUpPage.tsx",
+          "path": "frontend/src/pages/PaymentPage.tsx",
           "operation": "modify",
-          "description": "Refactor the signup flow to match the intent of the provided snippet but using Internet Identity: (1) authenticate via Internet Identity, then (2) capture Full Name + Email, then (3) trigger the new basic-profile save mutation and on success navigate to /dashboard. Remove any password fields and remove/disable the existing multi-field profile requirements for this simple flow. Ensure all user-facing text remains English. Verify the component's usage instructions before implementing."
+          "description": "Ensure the payment step is the next page after order creation and that it uses the loaded order data to construct the checkout request and handle missing/unauthorized orders with a safe English error state (no Not Found navigation)."
+        },
+        {
+          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
+          "operation": "modify",
+          "description": "After Stripe success handling and verification, route the user into the dedicated order confirmation experience (e.g., /order-confirmation/$orderId), and ensure 'Track My Order' continues to navigate to /track-order/$orderId."
+        },
+        {
+          "path": "frontend/src/pages/OrderConfirmationPage.tsx",
+          "operation": "modify",
+          "description": "Implement the dedicated confirmation UI and actions (Track My Order, Explore Home) and ensure it is used by the checkout flow after successful payment completion."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the order confirmation page into TanStack Router (add a protected route like /order-confirmation/$orderId) and ensure navigation paths used by the flow are registered."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Update SignUpPage to provide a simple “Create Account” form (Full Name + Email) after Internet Identity authentication, validate inputs with English errors, call backend basic-profile save, and route to /dashboard on success without modifying immutable auth/actor hooks.",
+      "summary": "Replace demo payment on the Payment page with real Stripe Checkout initiation via backend-assisted session creation (no frontend secret keys).",
       "acceptanceCriteria": [
-        "The Sign Up page provides an obvious path to: (1) authenticate via Internet Identity, then (2) enter Full Name + Email, then (3) create the account.",
-        "Submitting the form saves the basic profile via the backend and navigates the user to `/dashboard` on success.",
-        "The page does not request or store a password (because authentication is via Internet Identity).",
-        "Form validation prevents submission when Full Name is empty or Email is invalid and shows English error messages.",
-        "No changes are made to immutable frontend paths (e.g., `frontend/src/hooks/useInternetIdentity.ts(x)` and `frontend/src/hooks/useActor.ts`)."
+        "The Payment page no longer labels the flow as a demo and no longer navigates directly to /payment-success/$orderId without completing Stripe payment.",
+        "Clicking the payment CTA initiates a real Stripe payment flow (e.g., redirect to Stripe Checkout or confirm a PaymentIntent) using credentials that are not exposed as a Stripe secret key in the frontend bundle.",
+        "After Stripe indicates success, the app returns to the app and associates the successful payment with the correct orderId."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/SignUpPage.tsx",
-          "operation": "modify",
-          "description": "Implement the simplified post-auth form UX: show the Internet Identity auth action first; once authenticated, show only Full Name and Email fields with a single “Create Account” submit action. Add client-side validation (required full name, valid email) with English error messages, show submission loading/disabled state, and handle backend authorization/data errors gracefully. Keep navigation to /dashboard on success and keep existing identity-based redirect when a profile already exists. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/hooks/useCreateCheckoutSession.ts",
+          "operation": "create",
+          "description": "Create a React Query mutation hook that calls the backend capability createCheckoutSession(items, successUrl, cancelUrl), JSON-parses the response, validates that a non-empty Stripe Checkout URL exists, and returns it for redirect. Use the selected 'stripe' component approach for Stripe Checkout session creation; Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useUserProfile.ts",
+          "path": "frontend/src/utils/stripeOrderMapping.ts",
+          "operation": "create",
+          "description": "Add a helper to map an in-app order into Stripe ShoppingItem[] with validated amount (in cents) and descriptions. If the order amount cannot be derived safely, return an error state so the UI blocks checkout rather than initiating an incorrect charge."
+        },
+        {
+          "path": "frontend/src/pages/PaymentPage.tsx",
           "operation": "modify",
-          "description": "Export and wire the new basic-profile save hook for SignUpPage to use (calling the actor’s saveBasicProfile capability), ensuring query invalidation updates getCallerUserProfile consumers without requiring any changes to immutable Internet Identity or actor hooks. Verify the component's usage instructions before implementing."
+          "description": "Remove demo language and demo navigation. Use the useCreateCheckoutSession hook to initiate a real Stripe Checkout session and redirect via window.location.href (not router navigation). Build successUrl/cancelUrl so the app can associate the Stripe return with the correct orderId, and display an English error state if Stripe is not configured, the session response is invalid, or pricing cannot be determined. Use the selected 'stripe' component patterns for redirect-based checkout; Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Update post-payment success so it only confirms payment after Stripe verification succeeds, then enables Track/Home actions.",
+      "acceptanceCriteria": [
+        "The success page does not mark payment as received unless Stripe verification for the payment succeeds.",
+        "On successful verification, the order's paymentStatus is updated to the appropriate paid/verified/confirmed state consistent with backend rules.",
+        "The success UI includes working navigation to Home and to /track-order/$orderId."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
+          "operation": "modify",
+          "description": "Replace the current optimistic 'paidSubmitted' update with a real Stripe-success handling flow: extract the Stripe session identifier from the return URL, call backend capability getStripeSessionStatus(sessionId), and only when Stripe indicates completion call backend capability verifyPaymentAndConfirmOrder(orderId). Show English loading/error states, never claim payment received unless verification succeeds, and keep 'Explore Home' and 'Track My Order' actions working after verification. Use the selected 'stripe' component guidance for success handling and Stripe status checks; Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Extend or reuse existing URL parsing helpers to reliably read Stripe return parameters (e.g., session_id) from query string and/or hash contexts without introducing non-English messaging."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Implement and wire an Order Confirmation page with guarded access so it’s only reachable after successful payment completion.",
+      "acceptanceCriteria": [
+        "frontend/src/pages/OrderConfirmationPage.tsx contains a real UI (not empty) that summarizes confirmation and provides 'Track My Order' and 'Explore Home' actions in English.",
+        "A route exists for the order confirmation page and it is only reachable after successful payment completion (direct navigation without completing payment results in a safe redirect or an informative error state)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/OrderConfirmationPage.tsx",
+          "operation": "modify",
+          "description": "Implement a complete English order-confirmed UI that reads the orderId from route params, summarizes the confirmation state, and provides actions for 'Track My Order' (/track-order/$orderId) and 'Explore Home' (/). Add a guarded entry check (e.g., via sessionStorage flag set after successful Stripe verification) so direct navigation shows an informative error state or safely redirects to /payment/$orderId or /dashboard."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add and register a protected TanStack Router route for the Order Confirmation page (e.g., /order-confirmation/$orderId wrapped in AuthGate), and ensure it is included in the route tree so it is navigable after payment verification."
+        },
+        {
+          "path": "frontend/src/pages/PaymentSuccessPage.tsx",
+          "operation": "modify",
+          "description": "After successful Stripe verification, persist a short-lived 'payment completed' marker for the orderId (e.g., in sessionStorage) and navigate to the new order confirmation route so this page is the dedicated thank-you screen."
         }
       ]
     }

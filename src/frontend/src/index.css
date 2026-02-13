@@ -94,46 +94,95 @@
     }
 }
 
-/* Service Card Styling */
+/* Service Card Styling - Premium Black & Gold */
 .service-card {
-  background: #111;
+  background: oklch(0.12 0 0);
+  border: 1px solid oklch(0.25 0 0);
   border-radius: 14px;
-  padding: 16px;
+  padding: 20px;
   text-align: center;
-  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.service-card:hover {
+  border-color: oklch(0.78 0.18 85);
+  box-shadow: 0 4px 24px -2px oklch(0.78 0.18 85 / 0.2);
+  transform: translateY(-2px);
 }
 
 .service-card img {
   width: 100%;
-  max-width: 220px;   /* 🔥 image limit */
+  max-width: 220px;
   height: auto;
   border-radius: 10px;
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
   display: block;
+  object-fit: cover;
 }
 
-.price {
-  color: #f5b301;
-  font-weight: bold;
-  margin-top: 6px;
+/* Price positioned below image */
+.service-card .price {
+  color: oklch(0.78 0.18 85);
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.02em;
 }
 
-.delivery {
-  color: #aaa;
-  font-size: 14px;
+.service-card h3 {
+  color: oklch(0.95 0 0);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.service-card .delivery {
+  color: oklch(0.65 0 0);
+  font-size: 0.875rem;
+  margin: 0 0 16px 0;
 }
 
 .order-btn {
-  margin-top: 12px;
-  background: #f5b301;
-  color: #000;
+  margin-top: auto;
+  background: oklch(0.78 0.18 85);
+  color: oklch(0.12 0 0);
   border: none;
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .order-btn:hover {
-  opacity: 0.9;
+  background: oklch(0.82 0.20 85);
+  transform: scale(1.02);
+}
+
+.order-btn:active {
+  transform: scale(0.98);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .service-card {
+    padding: 16px;
+  }
+  
+  .service-card img {
+    max-width: 180px;
+  }
+  
+  .service-card h3 {
+    font-size: 1rem;
+  }
+  
+  .service-card .price {
+    font-size: 1rem;
+  }
 }

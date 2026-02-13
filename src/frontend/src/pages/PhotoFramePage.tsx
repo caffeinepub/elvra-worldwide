@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import ProductAddToCartSection from '../components/ProductAddToCartSection';
+import { getPremiumServiceByName } from '../constants/premiumServices';
 
 export default function PhotoFramePage() {
+  const service = getPremiumServiceByName('Photo Frame Design');
+  
   return (
     <div className="min-h-screen py-16 md:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,7 +50,11 @@ export default function PhotoFramePage() {
             </div>
           </div>
 
-          <ProductAddToCartSection productName="Photo Frame" />
+          <ProductAddToCartSection 
+            productName="Photo Frame Design"
+            price={service?.priceLabel || '$15'}
+            deliveryTime={service?.deliveryTime || 'Delivery: 3 Business Days'}
+          />
         </div>
       </div>
     </div>

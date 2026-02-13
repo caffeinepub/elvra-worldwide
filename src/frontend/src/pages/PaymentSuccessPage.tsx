@@ -1,63 +1,125 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
-import { useUpdateOrderPaymentStatus } from '../hooks/useOrderPayment';
+import { useNavigate } from '@tanstack/react-router';
+import { useGetStripeSessionStatus, useVerifyPaymentAndConfirmOrder } from '../hooks/useStripeVerification';
 import { useGetCallerOrders } from '../hooks/useAddToCart';
-import { CheckCircle2, Loader2, Package, ArrowRight } from 'lucide-react';
+import { getStripeSessionId } from '../utils/urlParams';
+import { CheckCircle2, Loader2, AlertCircle, Home, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PaymentSuccessPage() {
-  const { orderId } = useParams({ strict: false });
   const navigate = useNavigate();
-  const updatePaymentMutation = useUpdateOrderPaymentStatus();
-  const { data: orders, refetch } = useGetCallerOrders();
-  const [hasUpdated, setHasUpdated] = useState(false);
-
-  const order = orders?.find((o) => o.id.toString() === orderId);
+  const getSessionStatus = useGetStripeSessionStatus();
+  const verifyPayment = useVerifyPaymentAndConfirmOrder();
+  const { data: orders } = useGetCallerOrders();
+  const [verificationState, setVerificationState] = useState<'checking' | 'success' | 'error'>('checking');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (orderId && !hasUpdated && !updatePaymentMutation.isPending) {
-      setHasUpdated(true);
-      updatePaymentMutation.mutate(
-        { orderId: BigInt(orderId), status: 'Completed' },
-        {
-          onSuccess: () => {
-            refetch();
-          },
-          onError: (error) => {
-            console.error('Payment status update failed:', error);
-          }
+    const verifyStripePayment = async () => {
+      try {
+        // Get session ID from URL
+        const sessionId = getStripeSessionId();
+        if (!sessionId) {
+          setErrorMessage('No payment session found. Please try again.');
+          setVerificationState('error');
+          return;
         }
-      );
-    }
-  }, [orderId, hasUpdated, updatePaymentMutation]);
 
-  if (updatePaymentMutation.isPending || !order) {
+        // Get orderId from sessionStorage
+        const storedOrderId = sessionStorage.getItem('pendingPaymentOrderId');
+        if (!storedOrderId) {
+          setErrorMessage('Order information not found. Please contact support.');
+          setVerificationState('error');
+          return;
+        }
+        setOrderId(storedOrderId);
+
+        // Check Stripe session status
+        const sessionStatus = await getSessionStatus.mutateAsync(sessionId);
+        
+        if (sessionStatus.__kind__ === 'completed') {
+          // Verify payment and confirm order
+          await verifyPayment.mutateAsync(BigInt(storedOrderId));
+          
+          // Set success marker for order confirmation page
+          sessionStorage.setItem(`payment_completed_${storedOrderId}`, 'true');
+          sessionStorage.removeItem('pendingPaymentOrderId');
+          
+          setVerificationState('success');
+          
+          // Navigate to order confirmation page after a brief delay
+          setTimeout(() => {
+            navigate({ 
+              to: '/order-confirmation/$orderId', 
+              params: { orderId: storedOrderId } 
+            });
+          }, 2000);
+        } else if (sessionStatus.__kind__ === 'failed') {
+          setErrorMessage(sessionStatus.failed.error || 'Payment verification failed');
+          setVerificationState('error');
+        } else {
+          setErrorMessage('Payment status could not be verified');
+          setVerificationState('error');
+        }
+      } catch (error: any) {
+        console.error('Payment verification error:', error);
+        setErrorMessage(error.message || 'Failed to verify payment. Please contact support.');
+        setVerificationState('error');
+      }
+    };
+
+    verifyStripePayment();
+  }, []);
+
+  if (verificationState === 'checking') {
     return (
       <div className="min-h-screen py-16 md:py-24 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-lg text-muted-foreground">Processing your payment...</p>
+          <p className="text-lg text-muted-foreground">Verifying your payment...</p>
+          <p className="text-sm text-muted-foreground">Please wait while we confirm your transaction</p>
         </div>
       </div>
     );
   }
 
-  if (updatePaymentMutation.isError) {
+  if (verificationState === 'error') {
     return (
       <div className="min-h-screen py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
-          <Card className="border-destructive shadow-luxury">
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Payment Verification Failed</AlertTitle>
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+
+          <Card className="shadow-luxury">
             <CardHeader>
-              <CardTitle className="text-destructive">Payment Update Failed</CardTitle>
+              <CardTitle>What to do next?</CardTitle>
               <CardDescription>
-                There was an error updating your payment status. Please contact support.
+                If you believe this is an error, please contact our support team with your order details.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate({ to: '/dashboard' })}>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={() => navigate({ to: '/dashboard' })}
+                className="w-full"
+              >
+                <Home className="mr-2 h-4 w-4" />
                 Return to Dashboard
               </Button>
+              {orderId && (
+                <Button
+                  onClick={() => navigate({ to: '/payment/$orderId', params: { orderId } })}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Try Payment Again
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -67,81 +129,24 @@ export default function PaymentSuccessPage() {
 
   return (
     <div className="min-h-screen py-16 md:py-24">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 mb-6">
-            <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Payment Successful!</h1>
-          <p className="text-lg text-muted-foreground">
-            Your order has been confirmed and payment has been processed successfully.
-          </p>
-        </div>
-
-        <Card className="shadow-luxury mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Order Confirmation
-            </CardTitle>
-            <CardDescription>Order ID: #{order.id.toString()}</CardDescription>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
+        <Card className="shadow-luxury border-green-500/20">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle2 className="h-10 w-10 text-green-600" />
+            </div>
+            <CardTitle className="text-3xl">Payment Verified!</CardTitle>
+            <CardDescription className="text-base">
+              Your payment has been successfully verified and your order is confirmed.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Product</p>
-                <p className="font-medium text-lg">{order.product}</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Selected Sample</p>
-                <p className="font-medium text-lg">{order.sampleSelected}</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Brand Name</p>
-                <p className="font-medium">{order.brandName}</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Payment Status</p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm font-medium">
-                  <CheckCircle2 className="h-3 w-3" />
-                  {order.paymentStatus}
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">What's Next?</p>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>We will start working on your order immediately</li>
-                <li>You will receive updates via email at {order.email}</li>
-                <li>Expected delivery time: {order.deliveryTime}</li>
-                <li>You can track your order status in the Dashboard</li>
-              </ul>
-            </div>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Redirecting you to order confirmation...
+            </p>
+            <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
           </CardContent>
         </Card>
-
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button
-            onClick={() => navigate({ to: '/dashboard' })}
-            size="lg"
-            className="flex-1 shadow-luxury"
-          >
-            View My Orders
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          <Button
-            onClick={() => navigate({ to: '/' })}
-            variant="outline"
-            size="lg"
-            className="flex-1"
-          >
-            Return to Home
-          </Button>
-        </div>
       </div>
     </div>
   );
